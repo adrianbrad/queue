@@ -9,12 +9,7 @@ import (
 
 	"github.com/adrianbrad/queue"
 	"github.com/matryer/is"
-	"go.uber.org/goleak"
 )
-
-func TestMain(m *testing.M) {
-	goleak.VerifyTestMain(m)
-}
 
 func TestA(t *testing.T) {
 	t.Parallel()
@@ -52,8 +47,10 @@ func TestA(t *testing.T) {
 		ctx, cancelCtx := context.WithTimeout(ctx, time.Millisecond)
 		defer cancelCtx()
 
-		_, err := blockingQueue.Get(ctx)
-		i.Equal(context.Canceled, err)
+		e, err := blockingQueue.Get(ctx)
+		i.NoErr(err)
+
+		i.Equal("", e)
 	})
 
 	t.Run("Reset", func(t *testing.T) {
@@ -65,10 +62,13 @@ func TestA(t *testing.T) {
 			const noRoutines = 30
 
 			for j := 1; j <= noRoutines; j++ {
+				j := j
+
 				t.Run(
 					fmt.Sprintf("%dRoutinesWaiting", j),
 					func(t *testing.T) {
 						t.Parallel()
+
 						testResetOnMultipleRoutinesFunc[string](ctx, ids, j)(t)
 					},
 				)
