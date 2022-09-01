@@ -16,6 +16,8 @@
 Queue is a Go package providing different thread-safe generic queue implementations.
 
 Available queues:
-
-- `Blocking Queue` 
+#### Blocking Queue
   - Waits for the queue have elements available before retrieving from it.
+  - #### TODO:
+    - [ ]  `Put()` - append an element to the back of the queue
+    - [ ]  `Peek()` - retrieve but do not remove the head of the queue

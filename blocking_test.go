@@ -61,15 +61,15 @@ func TestBlocking(t *testing.T) {
 
 			const noRoutines = 30
 
-			for j := 1; j <= noRoutines; j++ {
-				j := j
+			for i := 1; i <= noRoutines; i++ {
+				i := i
 
 				t.Run(
-					fmt.Sprintf("%dRoutinesWaiting", j),
+					fmt.Sprintf("%dRoutinesWaiting", i),
 					func(t *testing.T) {
 						t.Parallel()
 
-						testResetOnMultipleRoutinesFunc[string](ctx, ids, j)(t)
+						testResetOnMultipleRoutinesFunc[string](ctx, ids, i)(t)
 					},
 				)
 			}
