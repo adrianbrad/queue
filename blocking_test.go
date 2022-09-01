@@ -11,7 +11,7 @@ import (
 	"github.com/matryer/is"
 )
 
-func TestA(t *testing.T) {
+func TestBlocking(t *testing.T) {
 	t.Parallel()
 
 	ids := []string{"0", "1", "2"}
@@ -78,9 +78,9 @@ func TestA(t *testing.T) {
 }
 
 func testResetOnMultipleRoutinesFunc[T any](
-	ctx context.Context,
-	ids []T,
-	totalRoutines int,
+		ctx context.Context,
+		ids []T,
+		totalRoutines int,
 ) func(t *testing.T) {
 	// nolint: thelper // not a test helper
 	return func(t *testing.T) {
