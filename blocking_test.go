@@ -56,7 +56,7 @@ func TestBlocking(t *testing.T) {
 		t.Run("SequentialReset", func(t *testing.T) {
 			t.Parallel()
 
-			const noRoutines = 30
+			const noRoutines = 100
 
 			for i := 1; i <= noRoutines; i++ {
 				i := i

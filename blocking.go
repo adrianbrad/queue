@@ -17,23 +17,25 @@ type Blocking[T any] struct {
 	// elements queue
 	elements []T
 
-	// index of the last element
-	index *atomic.Uint32
-
-	// broadcastChannelPtr stores a pointer to a channel which serves as
-	// a broadcast channel.
-	broadcastChannelPtr *atomic.Pointer[chan struct{}]
+	// sync stores the broadcast channel and the index of the last element.
+	sync *atomic.Pointer[sync]
 }
 
-// NewBlocking returns an initialized Blocking.
-func NewBlocking[T any](elements []T) *Blocking[T] {
-	broadcastChannel := make(chan struct{})
+type sync struct {
+	// broadcastChannel stores a channel which, when closed, emits a signal
+	// to all goroutines listening to it in Blocking.Take.
+	broadcastChannel chan struct{} // index of the last element
+	index            *atomic.Uint32
+}
 
+// NewBlocking returns an initialized Blocking Queue.
+func NewBlocking[T any](elements []T) *Blocking[T] {
 	return &Blocking[T]{
 		elements: elements,
-		index:    atomic.NewUint32(0),
-		broadcastChannelPtr: atomic.
-			NewPointer[chan struct{}](&broadcastChannel),
+		sync: atomic.NewPointer(&sync{
+			broadcastChannel: make(chan struct{}),
+			index:            atomic.NewUint32(0),
+		}),
 	}
 }
 
@@ -42,19 +44,21 @@ func NewBlocking[T any](elements []T) *Blocking[T] {
 //
 // It does not actually remove elements from the elements slice, pop
 // is implemented with the help of an index.
-func (s *Blocking[T]) Take(
+func (q *Blocking[T]) Take(
 	ctx context.Context,
 ) (v T) {
+	s := q.sync.Load()
+
 	newIndex := s.index.Inc()
 
 	// check if we have available elements
-	if int(newIndex) > len(s.elements) {
+	if int(newIndex) > len(q.elements) {
 		// if no elements are available wait for Reset or context close.
 		select {
 		// wait for the reset signal.
 		// acts like sync.Cond.Wait but with a channel.
-		case <-*s.broadcastChannelPtr.Load(): // s.index is 0 here
-			return s.Take(ctx)
+		case <-s.broadcastChannel: // q.index is 0 here
+			return q.Take(ctx)
 
 		// caller context is canceled, return default value for T and no err.
 		case <-ctx.Done():
@@ -62,27 +66,26 @@ func (s *Blocking[T]) Take(
 		}
 	}
 
-	return s.elements[newIndex-1]
+	return q.elements[newIndex-1]
 }
 
 // Reset notifies every blocking Take routine that index can be reset.
 // nolint: revive // line too long
 // inspiration from pre go 1.18(generics) code: https://gist.github.com/zviadm/c234426882bfc8acba88f3503edaaa36#file-cond2-go-L54
-func (s *Blocking[_]) Reset() {
-	// create a new signal channel
-	newBroadcastChannel := make(chan struct{})
+func (q *Blocking[_]) Reset() {
+	// replace the sync object, with a new one
+	// containing a fresh channel and index.
+	// save the old sync object in order to close the broadcast channel and
+	// resume execution of all goroutines waiting in the select block
+	// in the Take method.
+	oldSync := q.sync.Swap(&sync{
+		broadcastChannel: make(chan struct{}),
+		index:            atomic.NewUint32(0),
+	})
 
-	// place the new broadcast channel in place of the old signal channel,
-	// retrieve the old broadcast channel in order to close it and continue
-	// execution of all goroutines waiting for the select in the Take method.
-	oldBroadcastChannel := s.broadcastChannelPtr.Swap(&newBroadcastChannel)
-
-	// reset elements index.
-	s.index.Store(0)
-
-	// close the old broadcast channel thus starting all the sleeping
+	// close the old broadcast channel thus resuming all the sleeping
 	// goroutines waiting in the first select case of the Take method.
 	//
 	// this acts like a sync.Cond.Broadcast().
-	close(*oldBroadcastChannel)
+	close(oldSync.broadcastChannel)
 }
