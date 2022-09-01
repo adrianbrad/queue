@@ -1,0 +1,6 @@
+.DS_Store
+/.idea/
+/.vscode/
+coverage.txt
+coverage.out
+coverage.xml
