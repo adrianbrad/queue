@@ -78,9 +78,9 @@ func TestBlocking(t *testing.T) {
 }
 
 func testResetOnMultipleRoutinesFunc[T any](
-		ctx context.Context,
-		ids []T,
-		totalRoutines int,
+	ctx context.Context,
+	ids []T,
+	totalRoutines int,
 ) func(t *testing.T) {
 	// nolint: thelper // not a test helper
 	return func(t *testing.T) {
