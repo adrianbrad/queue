@@ -25,8 +25,7 @@ func TestBlocking(t *testing.T) {
 		blockingQueue := queue.NewBlocking(ids)
 
 		for j := range ids {
-			id, err := blockingQueue.Take(ctx)
-			i.NoErr(err)
+			id := blockingQueue.Take(ctx)
 
 			i.Equal(ids[j], id)
 		}
@@ -40,15 +39,13 @@ func TestBlocking(t *testing.T) {
 		blockingQueue := queue.NewBlocking(ids)
 
 		for range ids {
-			_, err := blockingQueue.Take(ctx)
-			i.NoErr(err)
+			blockingQueue.Take(ctx)
 		}
 
 		ctx, cancelCtx := context.WithTimeout(ctx, time.Millisecond)
 		defer cancelCtx()
 
-		e, err := blockingQueue.Take(ctx)
-		i.NoErr(err)
+		e := blockingQueue.Take(ctx)
 
 		i.Equal("", e)
 	})
@@ -84,13 +81,10 @@ func testResetOnMultipleRoutinesFunc[T any](
 ) func(t *testing.T) {
 	// nolint: thelper // not a test helper
 	return func(t *testing.T) {
-		i := is.New(t)
-
 		blockingQueue := queue.NewBlocking(ids)
 
 		for range ids {
-			_, err := blockingQueue.Take(ctx)
-			i.NoErr(err)
+			blockingQueue.Take(ctx)
 		}
 
 		var wg sync.WaitGroup
@@ -103,19 +97,15 @@ func testResetOnMultipleRoutinesFunc[T any](
 			go func(k int) {
 				defer wg.Done()
 
-				var (
-					id  T
-					err error
-				)
-
 				t.Logf("start routine %d", k)
+
+				var id T
 
 				defer func() {
 					t.Logf("done routine %d, id %v", k, id)
 				}()
 
-				id, err = blockingQueue.Take(ctx)
-				i.NoErr(err)
+				id = blockingQueue.Take(ctx)
 
 				retrievedID <- id
 			}(routineIdx)
@@ -125,8 +115,7 @@ func testResetOnMultipleRoutinesFunc[T any](
 
 		t.Log("reset")
 
-		err := blockingQueue.Reset()
-		i.NoErr(err)
+		blockingQueue.Reset()
 
 		counter := 0
 
@@ -144,8 +133,7 @@ func testResetOnMultipleRoutinesFunc[T any](
 			}
 
 			if counter%len(ids) == 0 {
-				err := blockingQueue.Reset()
-				i.NoErr(err)
+				blockingQueue.Reset()
 			}
 		}
 

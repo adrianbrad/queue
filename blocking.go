@@ -44,7 +44,7 @@ func NewBlocking[T any](elements []T) *Blocking[T] {
 // is implemented with the help of an index.
 func (s *Blocking[T]) Take(
 	ctx context.Context,
-) (v T, _ error) {
+) (v T) {
 	newIndex := s.index.Inc()
 
 	// check if we have available elements
@@ -58,17 +58,17 @@ func (s *Blocking[T]) Take(
 
 		// caller context is canceled, return default value for T and no err.
 		case <-ctx.Done():
-			return v, nil
+			return v
 		}
 	}
 
-	return s.elements[newIndex-1], nil
+	return s.elements[newIndex-1]
 }
 
 // Reset notifies every blocking Take routine that index can be reset.
 // nolint: revive // line too long
 // inspiration from pre go 1.18(generics) code: https://gist.github.com/zviadm/c234426882bfc8acba88f3503edaaa36#file-cond2-go-L54
-func (s *Blocking[_]) Reset() error {
+func (s *Blocking[_]) Reset() {
 	// create a new signal channel
 	newBroadcastChannel := make(chan struct{})
 
@@ -85,6 +85,4 @@ func (s *Blocking[_]) Reset() error {
 	//
 	// this acts like a sync.Cond.Broadcast().
 	close(*oldBroadcastChannel)
-
-	return nil
 }
