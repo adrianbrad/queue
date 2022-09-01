@@ -25,7 +25,7 @@ func TestA(t *testing.T) {
 		blockingQueue := queue.NewBlocking(ids)
 
 		for j := range ids {
-			id, err := blockingQueue.Get(ctx)
+			id, err := blockingQueue.Take(ctx)
 			i.NoErr(err)
 
 			i.Equal(ids[j], id)
@@ -40,14 +40,14 @@ func TestA(t *testing.T) {
 		blockingQueue := queue.NewBlocking(ids)
 
 		for range ids {
-			_, err := blockingQueue.Get(ctx)
+			_, err := blockingQueue.Take(ctx)
 			i.NoErr(err)
 		}
 
 		ctx, cancelCtx := context.WithTimeout(ctx, time.Millisecond)
 		defer cancelCtx()
 
-		e, err := blockingQueue.Get(ctx)
+		e, err := blockingQueue.Take(ctx)
 		i.NoErr(err)
 
 		i.Equal("", e)
@@ -89,7 +89,7 @@ func testResetOnMultipleRoutinesFunc[T any](
 		blockingQueue := queue.NewBlocking(ids)
 
 		for range ids {
-			_, err := blockingQueue.Get(ctx)
+			_, err := blockingQueue.Take(ctx)
 			i.NoErr(err)
 		}
 
@@ -114,7 +114,7 @@ func testResetOnMultipleRoutinesFunc[T any](
 					t.Logf("done routine %d, id %v", k, id)
 				}()
 
-				id, err = blockingQueue.Get(ctx)
+				id, err = blockingQueue.Take(ctx)
 				i.NoErr(err)
 
 				retrievedID <- id
