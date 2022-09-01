@@ -1,4 +1,4 @@
-name: Grype
+name: grype
 
 on:
   push:
