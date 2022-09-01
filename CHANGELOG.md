@@ -1,3 +1,13 @@
+## v0.2.0 (2022-09-01)
+
+### Feat
+
+- **blocking**: as per u/skeeto comment, remove the useless error returns
+
+### Fix
+
+- **deadlock**: fix the deadlock caused by unsynchronized index and broadcast channel
+
 ## v0.1.1 (2022-09-01)
 
 ### Refactor
