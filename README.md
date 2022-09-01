@@ -7,9 +7,9 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/adrianbrad/queue)](https://goreportcard.com/report/github.com/adrianbrad/queue)
 [![codecov](https://codecov.io/gh/adrianbrad/queue/branch/main/graph/badge.svg)](https://codecov.io/gh/adrianbrad/queue)
 
-[![lint-test](https://github.com/adrianbrad/queue/workflows/lint-test/badge.svg)](https://github.com/adrianbrad/queue/actions?query=workflow%3Alint-test)
-[![grype](https://github.com/adrianbrad/queue/workflows/grype/badge.svg)](https://github.com/adrianbrad/queue/actions?query=workflow%3Agrype)
-[![codeql](https://github.com/adrianbrad/queue/workflows/CodeQL/badge.svg)](https://github.com/adrianbrad/queue/actions?query=workflow%3ACodeQL)
+[![lint-test](https://github.com/adrianbrad/queue/actions/workflows/lint-test.yaml/badge.svg)](https://github.com/adrianbrad/queue/actions?query=workflow%3Alint-test)
+[![grype](https://github.com/adrianbrad/queue/actions/workflows/grype.yaml/badge.svg)](https://github.com/adrianbrad/queue/actions?query=workflow%3Agrype)
+[![codeql](https://github.com/adrianbrad/queue/actions/workflows/codeql.yaml/badge.svg)](https://github.com/adrianbrad/queue/actions?query=workflow%3ACodeQL)
 
 ---
 
