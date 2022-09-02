@@ -2,8 +2,9 @@ package queue_test
 
 import (
 	"bytes"
-	"github.com/adrianbrad/queue"
 	"testing"
+
+	"github.com/adrianbrad/queue"
 )
 
 // goos: darwin

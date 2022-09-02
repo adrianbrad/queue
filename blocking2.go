@@ -2,6 +2,7 @@ package queue
 
 import (
 	"context"
+
 	"go.uber.org/atomic"
 )
 
