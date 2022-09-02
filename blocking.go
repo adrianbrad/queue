@@ -40,10 +40,10 @@ func NewBlocking[T any](elements []T) *Blocking[T] {
 }
 
 // Take removes and returns the head of the elements queue.
-// If no element is available it waits until
+// If no element is available it waits until the queue
 //
-// It does not actually remove elements from the elements slice, pop
-// is implemented with the help of an index.
+// It does not actually remove elements from the elements slice, but
+// it's incrementing the underlying index.
 func (q *Blocking[T]) Take(
 	ctx context.Context,
 ) (v T) {
@@ -51,7 +51,7 @@ func (q *Blocking[T]) Take(
 
 	newIndex := s.index.Inc()
 
-	// check if we have available elements
+	// check if there is an element available.
 	if int(newIndex) > len(q.elements) {
 		// if no elements are available wait for Reset or context close.
 		select {
@@ -66,7 +66,15 @@ func (q *Blocking[T]) Take(
 		}
 	}
 
+	// if there is an element available, return it.
 	return q.elements[newIndex-1]
+}
+
+// Peek returns but does not remove the element at the head of the queue.
+func (q *Blocking[T]) Peek() T {
+	// this can produce inconsistencies with Take(), as the index
+	// could be read before or after the increment at line :52.
+	return q.elements[q.sync.Load().index.Load()]
 }
 
 // Reset notifies every blocking Take routine that index can be reset.
