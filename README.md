@@ -1,4 +1,4 @@
-# queue ![GitHub release](https://img.shields.io/github/v/release/adrianbrad/queue)
+# queue ![GitHub release](https://img.shields.io/github/v/tag/adrianbrad/queue)
 
 [![GitHub go.mod Go version of a Go module](https://img.shields.io/github/go-mod/go-version/adrianbrad/queue)](https://github.com/adrianbrad/queue)
 [![GoDoc reference example](https://img.shields.io/badge/godoc-reference-blue.svg)](https://pkg.go.dev/github.com/adrianbrad/queue)
