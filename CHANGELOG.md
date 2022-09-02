@@ -1,4 +1,8 @@
-## Unreleased
+## v0.3.0 (2022-09-02)
+
+### Feat
+
+- **blocking**: add `Peek` method, which returns but does not remove an element
 
 ### Refactor
 
