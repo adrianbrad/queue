@@ -1,3 +1,9 @@
+## Unreleased
+
+### Refactor
+
+- **blocking**: store index and sync as values instead of pointers
+
 ## v0.2.0 (2022-09-01)
 
 ### Feat

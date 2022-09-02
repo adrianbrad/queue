@@ -12,15 +12,15 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     steps:
-      - name: checkout code
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: install Go
+      - name: Install Go
         uses: actions/setup-go@v3
         with:
           go-version: ${{ env.GO_VERSION }}
 
-      - name: lint
+      - name: Lint
         uses: golangci/golangci-lint-action@v3
         with:
           version: latest
@@ -30,15 +30,23 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
     steps:
-      - name: checkout code
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: install Go
+      - name: Install Go
         uses: actions/setup-go@v3
         with:
           go-version: ${{ env.GO_VERSION }}
 
-      - name: test
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: ${{ runner.os }}-go-
+
+      - name: Test
         run: make test-ci
 
       - name: Upload coverage report
