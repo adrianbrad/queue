@@ -1,3 +1,9 @@
+## v0.3.1 (2022-09-03)
+
+### Refactor
+
+- **blocking**: change the index type from `atomic.Uint32` to `atomic.Uintptr`
+
 ## v0.3.0 (2022-09-02)
 
 ### Feat
