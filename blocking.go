@@ -25,8 +25,15 @@ type sync struct {
 	// broadcastChannel stores a channel which, when closed, emits a signal
 	// to all goroutines listening to it in Blocking.Take.
 	broadcastChannel chan struct{} // index of the last element
-	index            atomic.Uint32
+
+	// atomic.Uintptr instead of Uint32 or Uint64, as it correlates with the
+	// max length for slices which is
+	// defined by int (int32, max = 1<<31 - 1 on 32bit platforms and
+	// int64, max = 1<<63 - 1 on 64bit platforms)
+	index atomic.Uintptr
 }
+
+var zeroUintptr = atomic.Uintptr{}
 
 // NewBlocking returns an initialized Blocking Queue.
 func NewBlocking[T any](elements []T) *Blocking[T] {
@@ -34,7 +41,7 @@ func NewBlocking[T any](elements []T) *Blocking[T] {
 		elements: elements,
 		sync: *atomic.NewPointer(&sync{
 			broadcastChannel: make(chan struct{}),
-			index:            *atomic.NewUint32(0),
+			index:            zeroUintptr,
 		}),
 	}
 }
@@ -88,7 +95,7 @@ func (q *Blocking[_]) Reset() {
 	// in the Take method.
 	oldSync := q.sync.Swap(&sync{
 		broadcastChannel: make(chan struct{}),
-		index:            *atomic.NewUint32(0),
+		index:            zeroUintptr,
 	})
 
 	// close the old broadcast channel thus resuming all the sleeping

@@ -2,6 +2,7 @@ name: lint-test
 
 on:
   push:
+    branches: [ main ]
   pull_request:
 
 env:
