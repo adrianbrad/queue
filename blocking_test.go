@@ -3,6 +3,7 @@ package queue_test
 import (
 	"context"
 	"fmt"
+	"sort"
 	"sync"
 	"testing"
 	"time"
@@ -16,6 +17,51 @@ func TestBlocking(t *testing.T) {
 
 	ids := []string{"0", "1", "2"}
 	ctx := context.Background()
+
+	t.Run("Consistency", func(t *testing.T) {
+		i := is.New(t)
+
+		const lenElements = 100
+
+		ids := make([]int, lenElements)
+
+		for i := 1; i <= lenElements; i++ {
+			ids[i-1] = i
+		}
+
+		blockingQueue := queue.NewBlocking(ids)
+
+		var (
+			wg          sync.WaitGroup
+			resultMutex sync.Mutex
+		)
+
+		wg.Add(lenElements)
+
+		result := make([]int, 0, lenElements)
+
+		go blockingQueue.Refill(ctx)
+
+		for i := 0; i < lenElements; i++ {
+			go func() {
+				elem := blockingQueue.Take(ctx)
+
+				resultMutex.Lock()
+				result = append(result, elem)
+				resultMutex.Unlock()
+
+				defer wg.Done()
+			}()
+		}
+
+		wg.Wait()
+
+		sort.SliceStable(result, func(i, j int) bool {
+			return result[i] < result[j]
+		})
+
+		i.Equal(ids, result)
+	})
 
 	t.Run("SequentialIteration", func(t *testing.T) {
 		t.Parallel()
@@ -42,18 +88,55 @@ func TestBlocking(t *testing.T) {
 			blockingQueue.Take(ctx)
 		}
 
-		ctx, cancelCtx := context.WithTimeout(ctx, time.Millisecond)
-		defer cancelCtx()
+		ctx, cancelCtx := context.WithCancel(ctx)
+		cancelCtx()
 
 		e := blockingQueue.Take(ctx)
 
 		i.Equal("", e)
 	})
 
-	t.Run("Reset", func(t *testing.T) {
+	t.Run("Refill", func(t *testing.T) {
 		t.Parallel()
 
-		t.Run("SequentialReset", func(t *testing.T) {
+		t.Run("CancelContext", func(t *testing.T) {
+			t.Parallel()
+
+			workers := 10
+
+			blockingQueue := queue.NewBlocking(ids)
+
+			takeCtx, cancelTakeCtx := context.WithCancel(ctx)
+			refillCtx, cancelRefillCtx := context.WithCancel(ctx)
+
+			cancelRefillCtx()
+
+			for i := 0; i < workers; i++ {
+				go func() {
+					for {
+						blockingQueue.Take(takeCtx)
+					}
+				}()
+			}
+
+			done := make(chan struct{})
+
+			go func() {
+				blockingQueue.Refill(refillCtx)
+				close(done)
+				cancelTakeCtx()
+			}()
+
+			select {
+			case <-done:
+				return
+
+			case <-time.After(time.Second):
+				t.Error("refill was supposed to return")
+			}
+		})
+
+		t.Run("SequentialRefill", func(t *testing.T) {
 			t.Parallel()
 
 			const noRoutines = 100
@@ -66,7 +149,7 @@ func TestBlocking(t *testing.T) {
 					func(t *testing.T) {
 						t.Parallel()
 
-						testResetOnMultipleRoutinesFunc[string](ctx, ids, i)(t)
+						testRefillOnMultipleRoutinesFunc[string](ctx, ids, i)(t)
 					},
 				)
 			}
@@ -74,7 +157,7 @@ func TestBlocking(t *testing.T) {
 	})
 }
 
-func testResetOnMultipleRoutinesFunc[T any](
+func testRefillOnMultipleRoutinesFunc[T any](
 	ctx context.Context,
 	ids []T,
 	totalRoutines int,
@@ -113,9 +196,9 @@ func testResetOnMultipleRoutinesFunc[T any](
 
 		time.Sleep(time.Millisecond)
 
-		t.Log("reset")
+		t.Log("refill")
 
-		blockingQueue.Reset()
+		blockingQueue.Refill(ctx)
 
 		counter := 0
 
@@ -123,7 +206,7 @@ func testResetOnMultipleRoutinesFunc[T any](
 			counter++
 
 			t.Logf(
-				"counter: %d, reset: %t",
+				"counter: %d, refill: %t",
 				counter,
 				counter%len(ids) == 0,
 			)
@@ -133,7 +216,7 @@ func testResetOnMultipleRoutinesFunc[T any](
 			}
 
 			if counter%len(ids) == 0 {
-				blockingQueue.Reset()
+				blockingQueue.Refill(ctx)
 			}
 		}
 
