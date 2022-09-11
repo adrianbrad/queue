@@ -1,3 +1,9 @@
+## v0.4.0 (2022-09-11)
+
+### Feat
+
+- **blocking**: use buffered channel as the queue storage, as u/Cidan suggested
+
 ## v0.3.1 (2022-09-03)
 
 ### Refactor
