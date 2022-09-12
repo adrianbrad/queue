@@ -14,23 +14,24 @@ type Blocking[T any] struct {
 	// elements queue
 	elements []T
 
+	// elementsChan is the queue
 	elementsChan  chan T
 	refillMutex   sync.Mutex
 	elementsIndex int
 }
 
-// NewBlocking returns an initialized Blocking Queue.
+// NewBlocking returns a new Blocking Queue containing the given elements..
 func NewBlocking[T any](elements []T) *Blocking[T] {
-	c := make(chan T, len(elements))
+	elementsChan := make(chan T, len(elements))
 
 	// load the elements into the buffered channel.
 	for i := range elements {
-		c <- elements[i]
+		elementsChan <- elements[i]
 	}
 
 	return &Blocking[T]{
 		elements:      elements,
-		elementsChan:  c,
+		elementsChan:  elementsChan,
 		refillMutex:   sync.Mutex{},
 		elementsIndex: 0,
 	}
@@ -81,12 +82,12 @@ func (q *Blocking[T]) Refill(ctx context.Context) {
 
 		default:
 			select {
+			// attempt to send an element
+			// tot he elements channel.
 			case q.elementsChan <- q.elements[i]:
-				// successfully sent an element to the elements channel.
 
-			case <-ctx.Done():
-				return
-
+			// if the channel is full,
+			// save the current element index and return.
 			default:
 				// channel is full, store the elements index and return.
 				q.elementsIndex = i

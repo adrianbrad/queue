@@ -102,38 +102,32 @@ func TestBlocking(t *testing.T) {
 		t.Run("CancelContext", func(t *testing.T) {
 			t.Parallel()
 
-			workers := 10
+			t.Run("BeforeRefill", func(t *testing.T) {
+				t.Parallel()
 
-			blockingQueue := queue.NewBlocking(ids)
+				blockingQueue := queue.NewBlocking(ids)
 
-			takeCtx, cancelTakeCtx := context.WithCancel(ctx)
-			refillCtx, cancelRefillCtx := context.WithCancel(ctx)
+				refillCtx, cancelRefillCtx := context.WithCancel(ctx)
 
-			cancelRefillCtx()
+				blockingQueue.Take(ctx)
 
-			for i := 0; i < workers; i++ {
+				done := make(chan struct{})
+
+				cancelRefillCtx()
+
 				go func() {
-					for {
-						blockingQueue.Take(takeCtx)
-					}
+					blockingQueue.Refill(refillCtx)
+					close(done)
 				}()
-			}
 
-			done := make(chan struct{})
+				select {
+				case <-done:
+					return
 
-			go func() {
-				blockingQueue.Refill(refillCtx)
-				close(done)
-				cancelTakeCtx()
-			}()
-
-			select {
-			case <-done:
-				return
-
-			case <-time.After(time.Second):
-				t.Error("refill was supposed to return")
-			}
+				case <-time.After(time.Second):
+					t.Error("refill was supposed to return")
+				}
+			})
 		})
 
 		t.Run("SequentialRefill", func(t *testing.T) {
