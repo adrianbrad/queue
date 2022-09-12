@@ -1,3 +1,9 @@
+## v0.4.1 (2022-09-12)
+
+### Refactor
+
+- **blocking**: remove unnecessary ctx.Done case from Blocking.Refill()
+
 ## v0.4.0 (2022-09-11)
 
 ### Feat
