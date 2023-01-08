@@ -1,7 +1,6 @@
 package queue_test
 
 import (
-	"context"
 	"fmt"
 	"sort"
 	"sync"
@@ -16,7 +15,6 @@ func TestBlocking(t *testing.T) {
 	t.Parallel()
 
 	ids := []string{"0", "1", "2"}
-	ctx := context.Background()
 
 	t.Run("Consistency", func(t *testing.T) {
 		i := is.New(t)
@@ -40,11 +38,9 @@ func TestBlocking(t *testing.T) {
 
 		result := make([]int, 0, lenElements)
 
-		go blockingQueue.Refill(ctx)
-
 		for i := 0; i < lenElements; i++ {
 			go func() {
-				elem := blockingQueue.Take(ctx)
+				elem := blockingQueue.Take()
 
 				resultMutex.Lock()
 				result = append(result, elem)
@@ -71,32 +67,13 @@ func TestBlocking(t *testing.T) {
 		blockingQueue := queue.NewBlocking(ids)
 
 		for j := range ids {
-			id := blockingQueue.Take(ctx)
+			id := blockingQueue.Take()
 
 			i.Equal(ids[j], id)
 		}
 	})
 
-	t.Run("CancelContext", func(t *testing.T) {
-		t.Parallel()
-
-		i := is.New(t)
-
-		blockingQueue := queue.NewBlocking(ids)
-
-		for range ids {
-			blockingQueue.Take(ctx)
-		}
-
-		ctx, cancelCtx := context.WithCancel(ctx)
-		cancelCtx()
-
-		e := blockingQueue.Take(ctx)
-
-		i.Equal("", e)
-	})
-
-	t.Run("Refill", func(t *testing.T) {
+	t.Run("Reset", func(t *testing.T) {
 		t.Parallel()
 
 		t.Run("CancelContext", func(t *testing.T) {
@@ -107,16 +84,12 @@ func TestBlocking(t *testing.T) {
 
 				blockingQueue := queue.NewBlocking(ids)
 
-				refillCtx, cancelRefillCtx := context.WithCancel(ctx)
-
-				blockingQueue.Take(ctx)
+				blockingQueue.Take()
 
 				done := make(chan struct{})
 
-				cancelRefillCtx()
-
 				go func() {
-					blockingQueue.Refill(refillCtx)
+					blockingQueue.Reset()
 					close(done)
 				}()
 
@@ -143,7 +116,7 @@ func TestBlocking(t *testing.T) {
 					func(t *testing.T) {
 						t.Parallel()
 
-						testRefillOnMultipleRoutinesFunc[string](ctx, ids, i)(t)
+						testRefillOnMultipleRoutinesFunc[string](ids, i)(t)
 					},
 				)
 			}
@@ -152,7 +125,6 @@ func TestBlocking(t *testing.T) {
 }
 
 func testRefillOnMultipleRoutinesFunc[T any](
-	ctx context.Context,
 	ids []T,
 	totalRoutines int,
 ) func(t *testing.T) {
@@ -160,8 +132,9 @@ func testRefillOnMultipleRoutinesFunc[T any](
 	return func(t *testing.T) {
 		blockingQueue := queue.NewBlocking(ids)
 
+		// empty the queue
 		for range ids {
-			blockingQueue.Take(ctx)
+			blockingQueue.Take()
 		}
 
 		var wg sync.WaitGroup
@@ -182,9 +155,7 @@ func testRefillOnMultipleRoutinesFunc[T any](
 					t.Logf("done routine %d, id %v", k, id)
 				}()
 
-				id = blockingQueue.Take(ctx)
-
-				retrievedID <- id
+				retrievedID <- blockingQueue.Take()
 			}(routineIdx)
 		}
 
@@ -192,25 +163,26 @@ func testRefillOnMultipleRoutinesFunc[T any](
 
 		t.Log("refill")
 
-		blockingQueue.Refill(ctx)
+		// refill with 3 elems
+		blockingQueue.Reset()
 
-		counter := 0
+		routineCounter := 0
 
 		for range retrievedID {
-			counter++
+			routineCounter++
 
 			t.Logf(
-				"counter: %d, refill: %t",
-				counter,
-				counter%len(ids) == 0,
+				"routine counter: %d, refill: %t",
+				routineCounter,
+				routineCounter%len(ids) == 0,
 			)
 
-			if counter == totalRoutines {
+			if routineCounter == totalRoutines {
 				break
 			}
 
-			if counter%len(ids) == 0 {
-				blockingQueue.Refill(ctx)
+			if routineCounter%len(ids) == 0 {
+				blockingQueue.Reset()
 			}
 		}
 

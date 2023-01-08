@@ -1,7 +1,6 @@
 package queue
 
 import (
-	"context"
 	"sync"
 )
 
@@ -12,29 +11,24 @@ import (
 // elements are added to the queue.
 type Blocking[T any] struct {
 	// elements queue
-	elements []T
-
-	// elementsChan is the queue
-	elementsChan  chan T
-	refillMutex   sync.Mutex
+	elements      []T
 	elementsIndex int
+
+	lock sync.Mutex
+	cond *sync.Cond
 }
 
 // NewBlocking returns a new Blocking Queue containing the given elements..
 func NewBlocking[T any](elements []T) *Blocking[T] {
-	elementsChan := make(chan T, len(elements))
-
-	// load the elements into the buffered channel.
-	for i := range elements {
-		elementsChan <- elements[i]
-	}
-
-	return &Blocking[T]{
+	b := &Blocking[T]{
 		elements:      elements,
-		elementsChan:  elementsChan,
-		refillMutex:   sync.Mutex{},
 		elementsIndex: 0,
+		lock:          sync.Mutex{},
 	}
+
+	b.cond = sync.NewCond(&b.lock)
+
+	return b
 }
 
 // Take removes and returns the head of the elements queue.
@@ -42,57 +36,61 @@ func NewBlocking[T any](elements []T) *Blocking[T] {
 //
 // It does not actually remove elements from the elements slice, but
 // it's incrementing the underlying index.
-func (q *Blocking[T]) Take(
-	ctx context.Context,
-) (v T) {
-	select {
-	case v = <-q.elementsChan: // load the next element into the v variable
-	case <-ctx.Done():
-	}
+func (q *Blocking[T]) Take() (v T) {
+	q.lock.Lock()
+	defer q.lock.Unlock()
 
-	// return v which is either the default value for T or the next
-	// element from the queue.
-	return v
+	idx := q.getNextIndexOrWait()
+
+	elem := q.elements[idx]
+
+	q.elementsIndex++
+
+	return elem
 }
 
-// Refill attempts to refill the queue with the elements added at
-// initialization.
-// If there is no room for new elements in the channel the method blocks
-// until there is an available spot for the element or the context is closed.
-//
-// ! There is a chance that this method can block indefinitely if other
-// threads are constantly reading from the queue, so a timeout context
-// would be recommended.
-func (q *Blocking[T]) Refill(ctx context.Context) {
-	q.refillMutex.Lock()
-	defer q.refillMutex.Unlock()
-
-	// execute the loop until the elements channel is full.
-	for i := q.elementsIndex; len(q.elementsChan) <= cap(q.elementsChan); i++ {
-		// if the elements slice is consumed, reset the index and consume
-		// it again from the start.
-		if i == len(q.elements) {
-			i = 0
-		}
-
-		select {
-		// first of all check if the context was cancelled.
-		case <-ctx.Done():
-			return
-
-		default:
-			select {
-			// attempt to send an element
-			// tot he elements channel.
-			case q.elementsChan <- q.elements[i]:
-
-			// if the channel is full,
-			// save the current element index and return.
-			default:
-				// channel is full, store the elements index and return.
-				q.elementsIndex = i
-				return
-			}
-		}
+func (q *Blocking[T]) getNextIndexOrWait() int {
+	if q.elementsIndex < len(q.elements) {
+		return q.elementsIndex
 	}
+
+	q.cond.Wait()
+
+	return q.getNextIndexOrWait()
+}
+
+// Push inserts the element into the queue,
+// while also increasing the queue size.
+func (q *Blocking[T]) Push(elem T) {
+	q.lock.Lock()
+	defer q.lock.Unlock()
+
+	q.elements = append(q.elements, elem)
+
+	q.cond.Signal()
+}
+
+// Peek retrieves but does not return the head of the queue.
+func (q *Blocking[T]) Peek() T {
+	q.lock.Lock()
+	defer q.lock.Unlock()
+
+	if q.elementsIndex == len(q.elements) {
+		q.cond.Wait()
+	}
+
+	elem := q.elements[q.elementsIndex]
+
+	return elem
+}
+
+// Reset sets the queue elements index to 0. The queue will be in its initial
+// state.
+func (q *Blocking[T]) Reset() {
+	q.lock.Lock()
+	defer q.lock.Unlock()
+
+	q.elementsIndex = 0
+
+	q.cond.Broadcast()
 }
