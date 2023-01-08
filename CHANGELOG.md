@@ -1,3 +1,9 @@
+## v0.5.0 (2023-01-08)
+
+### Feat
+
+- **blocking**: remove internal channel and implement peek
+
 ## v0.4.1 (2022-09-12)
 
 ### Refactor
