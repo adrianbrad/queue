@@ -189,3 +189,52 @@ func testRefillOnMultipleRoutinesFunc[T any](
 		wg.Wait()
 	}
 }
+
+func TestBlocking_Push(t *testing.T) {
+	i := is.New(t)
+
+	elems := []int{1, 2, 3}
+
+	blockingQueue := queue.NewBlocking(elems)
+
+	for range elems {
+		blockingQueue.Take()
+	}
+
+	elem := make(chan int)
+
+	go func() {
+		elem <- blockingQueue.Take()
+	}()
+
+	time.Sleep(time.Millisecond)
+
+	blockingQueue.Push(4)
+
+	i.Equal(4, <-elem)
+}
+
+func TestBlocking_Peek(t *testing.T) {
+	i := is.New(t)
+
+	elems := []int{1, 2, 3}
+
+	blockingQueue := queue.NewBlocking(elems)
+
+	for range elems {
+		blockingQueue.Take()
+	}
+
+	elem := make(chan int)
+
+	go func() {
+		elem <- blockingQueue.Peek()
+	}()
+
+	time.Sleep(time.Millisecond)
+
+	blockingQueue.Push(4)
+
+	i.Equal(4, <-elem)
+	i.Equal(4, blockingQueue.Take())
+}
