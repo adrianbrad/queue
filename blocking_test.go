@@ -209,7 +209,7 @@ func TestBlocking_Push(t *testing.T) {
 
 	time.Sleep(time.Millisecond)
 
-	blockingQueue.Push(4)
+	blockingQueue.Put(4)
 
 	i.Equal(4, <-elem)
 }
@@ -233,8 +233,23 @@ func TestBlocking_Peek(t *testing.T) {
 
 	time.Sleep(time.Millisecond)
 
-	blockingQueue.Push(4)
+	blockingQueue.Put(4)
 
 	i.Equal(4, <-elem)
 	i.Equal(4, blockingQueue.Take())
+}
+
+func TestBlocking_Get(t *testing.T) {
+	i := is.New(t)
+
+	elems := []int{1, 2, 3}
+
+	blockingQueue := queue.NewBlocking(elems)
+
+	for range elems {
+		blockingQueue.Take()
+	}
+
+	_, err := blockingQueue.Get()
+	i.Equal(queue.ErrNoElementsAvailable, err)
 }
