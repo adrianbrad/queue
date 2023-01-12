@@ -1,3 +1,10 @@
+## v0.6.0 (2023-01-12)
+
+### Feat
+
+- **options**: added `capacity` option
+- **blocking**: implement `Get` method, it returns an error if there are no available elements in the queue
+
 ## v0.5.0 (2023-01-08)
 
 ### Feat
