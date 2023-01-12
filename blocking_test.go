@@ -14,49 +14,93 @@ import (
 func TestBlocking(t *testing.T) {
 	t.Parallel()
 
-	ids := []string{"0", "1", "2"}
-
 	t.Run("Consistency", func(t *testing.T) {
+		t.Parallel()
+
 		i := is.New(t)
 
-		const lenElements = 100
+		t.Run("100 concurrent goroutines reading", func(t *testing.T) {
+			t.Parallel()
 
-		ids := make([]int, lenElements)
+			const lenElements = 100
 
-		for i := 1; i <= lenElements; i++ {
-			ids[i-1] = i
-		}
+			ids := make([]int, lenElements)
 
-		blockingQueue := queue.NewBlocking(ids)
+			for i := 1; i <= lenElements; i++ {
+				ids[i-1] = i
+			}
 
-		var (
-			wg          sync.WaitGroup
-			resultMutex sync.Mutex
-		)
+			blockingQueue := queue.NewBlocking(ids)
 
-		wg.Add(lenElements)
+			var (
+				wg          sync.WaitGroup
+				resultMutex sync.Mutex
+			)
 
-		result := make([]int, 0, lenElements)
+			wg.Add(lenElements)
 
-		for i := 0; i < lenElements; i++ {
-			go func() {
-				elem := blockingQueue.Take()
+			result := make([]int, 0, lenElements)
 
-				resultMutex.Lock()
-				result = append(result, elem)
-				resultMutex.Unlock()
+			for i := 0; i < lenElements; i++ {
+				go func() {
+					elem := blockingQueue.Take()
 
-				defer wg.Done()
-			}()
-		}
+					resultMutex.Lock()
+					result = append(result, elem)
+					resultMutex.Unlock()
 
-		wg.Wait()
+					defer wg.Done()
+				}()
+			}
 
-		sort.SliceStable(result, func(i, j int) bool {
-			return result[i] < result[j]
+			wg.Wait()
+
+			sort.SliceStable(result, func(i, j int) bool {
+				return result[i] < result[j]
+			})
+
+			i.Equal(ids, result)
 		})
 
-		i.Equal(ids, result)
+		t.Run("Peek and Push Waiting", func(t *testing.T) {
+			t.Parallel()
+
+			i := is.New(t)
+
+			elems := []int{1}
+
+			blockingQueue := queue.NewBlocking(elems)
+
+			_ = blockingQueue.Take()
+
+			var wg sync.WaitGroup
+
+			wg.Add(2)
+
+			peekDone := make(chan struct{})
+
+			go func() {
+				defer wg.Done()
+				defer close(peekDone)
+
+				elem := blockingQueue.Peek()
+				i.Equal(elems[0], elem)
+			}()
+
+			go func() {
+				defer wg.Done()
+				<-peekDone
+
+				elem := blockingQueue.Take()
+				i.Equal(elems[0], elem)
+			}()
+
+			time.Sleep(time.Microsecond)
+
+			blockingQueue.Reset()
+
+			wg.Wait()
+		})
 	})
 
 	t.Run("SequentialIteration", func(t *testing.T) {
@@ -64,47 +108,65 @@ func TestBlocking(t *testing.T) {
 
 		i := is.New(t)
 
-		blockingQueue := queue.NewBlocking(ids)
+		elems := []int{1, 2, 3}
 
-		for j := range ids {
+		blockingQueue := queue.NewBlocking(elems)
+
+		for j := range elems {
 			id := blockingQueue.Take()
 
-			i.Equal(ids[j], id)
+			i.Equal(elems[j], id)
 		}
 	})
 
 	t.Run("Reset", func(t *testing.T) {
 		t.Parallel()
 
-		t.Run("CancelContext", func(t *testing.T) {
+		t.Run("WithCapacity", func(t *testing.T) {
 			t.Parallel()
 
-			t.Run("BeforeRefill", func(t *testing.T) {
-				t.Parallel()
+			i := is.New(t)
 
-				blockingQueue := queue.NewBlocking(ids)
+			elems := []int{1, 2, 3}
 
-				blockingQueue.Take()
+			blockingQueue := queue.NewBlocking(
+				elems,
+				queue.WithCapacity(len(elems)+1),
+			)
 
-				done := make(chan struct{})
+			i.Equal(3, blockingQueue.Size())
 
-				go func() {
-					blockingQueue.Reset()
-					close(done)
-				}()
+			blockingQueue.Put(4)
 
-				select {
-				case <-done:
-					return
+			i.Equal(4, blockingQueue.Size())
 
-				case <-time.After(time.Second):
-					t.Error("refill was supposed to return")
-				}
-			})
+			blockingQueue.Reset()
+
+			i.Equal(3, blockingQueue.Size())
+
+			size := blockingQueue.Size()
+
+			for j := 0; j < size; j++ {
+				i.Equal(elems[j], blockingQueue.Take())
+			}
+
+			elem := make(chan int)
+
+			go func() {
+				elem <- blockingQueue.Take()
+			}()
+
+			time.Sleep(time.Millisecond)
+
+			blockingQueue.Put(5)
+
+			i.Equal(5, <-elem)
 		})
 
 		t.Run("SequentialRefill", func(t *testing.T) {
 			t.Parallel()
+
+			elems := []int{1, 2, 3}
 
 			const noRoutines = 100
 
@@ -116,7 +178,7 @@ func TestBlocking(t *testing.T) {
 					func(t *testing.T) {
 						t.Parallel()
 
-						testRefillOnMultipleRoutinesFunc[string](ids, i)(t)
+						testRefillOnMultipleRoutinesFunc[int](elems, i)(t)
 					},
 				)
 			}
@@ -190,31 +252,70 @@ func testRefillOnMultipleRoutinesFunc[T any](
 	}
 }
 
-func TestBlocking_Push(t *testing.T) {
-	i := is.New(t)
+func TestBlocking_Put(t *testing.T) {
+	t.Parallel()
 
-	elems := []int{1, 2, 3}
+	t.Run("NoCapacity", func(t *testing.T) {
+		i := is.New(t)
 
-	blockingQueue := queue.NewBlocking(elems)
+		t.Parallel()
 
-	for range elems {
-		blockingQueue.Take()
-	}
+		elems := []int{1, 2, 3}
 
-	elem := make(chan int)
+		blockingQueue := queue.NewBlocking(elems)
 
-	go func() {
-		elem <- blockingQueue.Take()
-	}()
+		for range elems {
+			blockingQueue.Take()
+		}
 
-	time.Sleep(time.Millisecond)
+		elem := make(chan int)
 
-	blockingQueue.Put(4)
+		go func() {
+			elem <- blockingQueue.Take()
+		}()
 
-	i.Equal(4, <-elem)
+		time.Sleep(time.Millisecond)
+
+		blockingQueue.Put(4)
+
+		i.Equal(4, <-elem)
+	})
+
+	t.Run("WithCapacity", func(t *testing.T) {
+		t.Parallel()
+
+		elems := []int{1, 2, 3}
+
+		blockingQueue := queue.NewBlocking(
+			elems,
+			queue.WithCapacity(len(elems)),
+		)
+
+		added := make(chan struct{})
+
+		go func() {
+			defer close(added)
+
+			blockingQueue.Put(4)
+		}()
+
+		select {
+		case <-added:
+			t.Fatalf("received unexpected signal")
+		case <-time.After(time.Millisecond):
+		}
+
+		for range elems {
+			blockingQueue.Take()
+		}
+
+		<-added
+	})
 }
 
 func TestBlocking_Peek(t *testing.T) {
+	t.Parallel()
+
 	i := is.New(t)
 
 	elems := []int{1, 2, 3}
@@ -240,16 +341,65 @@ func TestBlocking_Peek(t *testing.T) {
 }
 
 func TestBlocking_Get(t *testing.T) {
+	t.Parallel()
+
 	i := is.New(t)
 
 	elems := []int{1, 2, 3}
 
-	blockingQueue := queue.NewBlocking(elems)
+	t.Run("NoElemsAvailable", func(t *testing.T) {
+		t.Parallel()
 
-	for range elems {
-		blockingQueue.Take()
+		blockingQueue := queue.NewBlocking(elems)
+
+		for range elems {
+			blockingQueue.Take()
+		}
+
+		_, err := blockingQueue.Get()
+		i.Equal(queue.ErrNoElementsAvailable, err)
+	})
+
+	t.Run("Success", func(t *testing.T) {
+		t.Parallel()
+
+		blockingQueue := queue.NewBlocking(elems)
+
+		elem, err := blockingQueue.Get()
+		i.NoErr(err)
+
+		i.Equal(1, elem)
+	})
+}
+
+func TestBlocking_Capacity(t *testing.T) {
+	t.Parallel()
+
+	i := is.New(t)
+
+	elems := []int{1, 2, 3}
+	capacity := 2
+
+	blocking := queue.NewBlocking(elems, queue.WithCapacity(capacity))
+
+	i.Equal(2, blocking.Size())
+
+	i.Equal(1, blocking.Take())
+	i.Equal(2, blocking.Take())
+
+	elem := make(chan int)
+
+	go func() {
+		elem <- blocking.Take()
+	}()
+
+	select {
+	case e := <-elem:
+		t.Fatalf("received unexepected elem: %d", e)
+	case <-time.After(time.Microsecond):
 	}
 
-	_, err := blockingQueue.Get()
-	i.Equal(queue.ErrNoElementsAvailable, err)
+	blocking.Put(4)
+
+	i.Equal(4, <-elem)
 }
