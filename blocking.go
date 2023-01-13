@@ -1,7 +1,6 @@
 package queue
 
 import (
-	"fmt"
 	"sync"
 )
 
@@ -64,20 +63,36 @@ func NewBlocking[T any](
 
 // ==================================Insertion=================================
 
-// Put inserts the element to the tail the queue,
-// while also increasing the queue size.
+// Put inserts the element to the tail the queue.
+// It waits for necessary space to become available.
 func (q *Blocking[T]) Put(elem T) {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 
 	if q.isFull() {
-		fmt.Print("brad")
 		q.notFullCond.Wait()
 	}
 
 	q.elements = append(q.elements, elem)
 
 	q.notEmptyCond.Signal()
+}
+
+// Offer inserts the element to the tail the queue.
+// If the queue is full it returns the ErrQueueIsFull error.
+func (q *Blocking[T]) Offer(elem T) error {
+	q.lock.Lock()
+	defer q.lock.Unlock()
+
+	if q.isFull() {
+		return ErrQueueIsFull
+	}
+
+	q.elements = append(q.elements, elem)
+
+	q.notEmptyCond.Signal()
+
+	return nil
 }
 
 // Reset sets the queue elements index to 0. The queue will be in its initial

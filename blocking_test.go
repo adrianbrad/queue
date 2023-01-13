@@ -313,6 +313,62 @@ func TestBlocking_Put(t *testing.T) {
 	})
 }
 
+func TestBlocking_Offer(t *testing.T) {
+	t.Parallel()
+
+	t.Run("NoCapacity", func(t *testing.T) {
+		t.Parallel()
+
+		i := is.New(t)
+
+		elems := []int{1, 2, 3}
+
+		blockingQueue := queue.NewBlocking(elems)
+
+		for range elems {
+			blockingQueue.Take()
+		}
+
+		elem := make(chan int)
+
+		go func() {
+			elem <- blockingQueue.Take()
+		}()
+
+		time.Sleep(time.Millisecond)
+
+		err := blockingQueue.Offer(4)
+		i.NoErr(err)
+
+		i.Equal(4, <-elem)
+	})
+
+	t.Run("WithCapacity", func(t *testing.T) {
+		t.Parallel()
+
+		i := is.New(t)
+
+		elems := []int{1, 2, 3}
+
+		blockingQueue := queue.NewBlocking(
+			elems,
+			queue.WithCapacity(len(elems)),
+		)
+
+		err := blockingQueue.Offer(4)
+		i.Equal(queue.ErrQueueIsFull, err)
+
+		for range elems {
+			blockingQueue.Take()
+		}
+
+		err = blockingQueue.Offer(4)
+		i.NoErr(err)
+
+		i.Equal(4, blockingQueue.Take())
+	})
+}
+
 func TestBlocking_Peek(t *testing.T) {
 	t.Parallel()
 

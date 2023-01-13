@@ -12,6 +12,12 @@ type Queue[T any] interface {
 	// Get retrieves and removes the head of the queue.
 	Get() (T, error)
 
+	// Take retrieves and removes the head of the queue.
+	Take() T
+
 	// Put inserts the element to the tail of the queue.
 	Put(T)
+
+	// Offer inserts the element to the tail of the queue.
+	Offer(T) error
 }
