@@ -1,3 +1,9 @@
+## v0.7.0 (2023-01-13)
+
+### Feat
+
+- **blocking**: implement the `Offer` method which returns an error in case the queue is full
+
 ## v0.6.0 (2023-01-12)
 
 ### Feat
