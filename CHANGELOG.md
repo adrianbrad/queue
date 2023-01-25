@@ -1,3 +1,10 @@
+## v0.8.0 (2023-01-25)
+
+### Feat
+
+- add missing source code. update readme
+- improve the `Queue` interface, implement `Priority` queue, fix `Blocking` tests, provide example tests
+
 ## v0.7.0 (2023-01-13)
 
 ### Feat

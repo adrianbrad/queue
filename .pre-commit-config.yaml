@@ -4,12 +4,12 @@ repos:
     hooks:
       - id: commitizen
   - repo: https://github.com/golangci/golangci-lint
-    rev: v1.49.0
+    rev: v1.50.1
     hooks:
       - id: golangci-lint
         name: golangci-lint
         description: Fast linters runner for Go.
-        entry: golangci-lint run --fix
+        entry: golangci-lint run --fix --config .golangci.yml
         types: [go]
         language: golang
         pass_filenames: false

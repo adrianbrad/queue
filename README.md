@@ -13,8 +13,23 @@
 
 ---
 
-Queue is a Go package providing different thread-safe generic queue implementations.
+Queue is a Go package that provides multiple thread-safe generic queue implementations.
 
-Available queues:
-#### Blocking Queue
-  - Waits for the queue have elements available before retrieving from it.
+A queue is a sequence of entities that is open at both ends where he elements are 
+added(enqueued) to the tail(back) of the queue and removed(dequeued) from the head(front) of the queue.
+
+### Notable characteristics
+- Usable zero values.
+- The queues can be reset to their initial state.
+- Implementations satisfy the `Queue` interface.
+- Example tests are provided.
+
+## Blocking Queue
+- FIFO Ordering 
+- Waits for the queue have elements available before retrieving from it.
+- Implemented using `sync.Cond` from standard library.
+
+## Priority Queue
+- Order based on the `Less` method implemented by elements.
+- Waits for the queue have elements available before retrieving from it.
+- Implemented using `container/heap` standard library package.

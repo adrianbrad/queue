@@ -1,7 +1,11 @@
-// Package queue provides different thread-safe generic queue implementations.
+// Package queue provides multiple thread-safe generic queue implementations.
+// Currently, there are 2 available implementations:
 //
-// The blocking waits for the queue have elements available
-// before retrieving from it.
-// The blocking queue can be refilled in order to make all elements
-// available again.
+// A blocking queue, which provides methods that wait for the
+// queue to have available elements when attempting to retrieve an element, and
+// waits for a free slot when attempting to insert an element.
+//
+// A priority queue based on a container.Heap. The elements in the queue
+// must implement the Lesser interface, and are ordered based on the
+// Less method. The head of the queue is always the highest priority element.
 package queue

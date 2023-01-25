@@ -7,17 +7,17 @@ package queue
 // of the queue.
 type Queue[T any] interface {
 	// Peek retrieves but does not remove the head of the queue.
-	Peek() T
+	Peek() (T, error)
+
+	// Size returns the number of elements in the queue.
+	Size() int
 
 	// Get retrieves and removes the head of the queue.
 	Get() (T, error)
 
-	// Take retrieves and removes the head of the queue.
-	Take() T
-
-	// Put inserts the element to the tail of the queue.
-	Put(T)
-
 	// Offer inserts the element to the tail of the queue.
 	Offer(T) error
+
+	// Reset sets the queue to its initial state.
+	Reset()
 }
