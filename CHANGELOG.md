@@ -2,6 +2,7 @@
 
 ### Feat
 
+- Implement reset for all queue. Add missing source code from previous commit. Update readme
 - add missing source code. update readme
 - improve the `Queue` interface, implement `Priority` queue, fix `Blocking` tests, provide example tests
 
