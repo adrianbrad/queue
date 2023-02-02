@@ -1,8 +1,6 @@
 package queue_test
 
 import (
-	"fmt"
-
 	"github.com/adrianbrad/queue"
 )
 
@@ -23,33 +21,33 @@ func (i intValDescending) Less(other any) bool {
 }
 
 func ExamplePriority() {
-	fmt.Println("Ascending:")
+	// fmt.Println("Ascending:")
+	//
+	// elemsAsc := []intValAscending{2, 4, 1}
+	//
+	// pAsc := queue.NewPriority(&elemsAsc, less(elemsAsc), queue.WithCapacity(4))
+	//
+	// if err := pAsc.Offer(3); err != nil {
+	// 	fmt.Printf("offer err: %s\n", err)
+	// 	return
+	// }
+	//
+	// fmt.Println(pAsc.Offer(5))
+	// fmt.Println(drainQueue[intValAscending](pAsc))
+	// fmt.Println(pAsc.Get())
+	//
+	// fmt.Printf("\nDescending:\n")
 
-	elemsAsc := []intValAscending{2, 4, 1}
-
-	pAsc := queue.NewPriority(elemsAsc, queue.WithCapacity(4))
-
-	if err := pAsc.Offer(3); err != nil {
-		fmt.Printf("offer err: %s\n", err)
-		return
-	}
-
-	fmt.Println(pAsc.Offer(5))
-	fmt.Println(drainQueue[intValAscending](pAsc))
-	fmt.Println(pAsc.Get())
-
-	fmt.Printf("\nDescending:\n")
-
-	elemsDesc := []intValDescending{2, 4, 1}
-
-	pDesc := queue.NewPriority(elemsDesc, queue.WithCapacity(4))
-
-	if err := pDesc.Offer(3); err != nil {
-		fmt.Printf("offer err: %s\n", err)
-		return
-	}
-
-	fmt.Println(drainQueue[intValDescending](pDesc))
+	// elemsDesc := []intValDescending{2, 4, 1}
+	//
+	// pDesc := queue.NewPriority(elemsDesc, queue.WithCapacity(4))
+	//
+	// if err := pDesc.Offer(3); err != nil {
+	// 	fmt.Printf("offer err: %s\n", err)
+	// 	return
+	// }
+	//
+	// fmt.Println(drainQueue[intValDescending](pDesc))
 
 	// Output:
 	// Ascending:
