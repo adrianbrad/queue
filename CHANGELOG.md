@@ -1,3 +1,10 @@
+## v0.9.0 (2023-02-03)
+
+### Feat
+
+- **priority**: removed lesser interface. added fuzz and benchmarks
+- **priority**: remove lesser interface and use a less func
+
 ## v0.8.0 (2023-01-25)
 
 ### Feat
