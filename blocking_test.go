@@ -430,7 +430,7 @@ func testResetOnMultipleRoutinesFunc[T any](
 	ids []T,
 	totalRoutines int,
 ) func(t *testing.T) {
-	// nolint: thelper // not a test helper
+	//nolint: thelper // not a test helper
 	return func(t *testing.T) {
 		blockingQueue := queue.NewBlocking(ids)
 
