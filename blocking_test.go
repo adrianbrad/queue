@@ -14,31 +14,6 @@ import (
 func TestBlocking(t *testing.T) {
 	t.Parallel()
 
-	t.Run("ValidZeroValue", func(t *testing.T) {
-		t.Parallel()
-
-		i := is.New(t)
-
-		// zero value initialization
-		var blockingQueue queue.Blocking[int]
-
-		_, err := blockingQueue.Get()
-
-		i.Equal(queue.ErrNoElementsAvailable, err)
-
-		err = blockingQueue.Offer(1)
-		i.NoErr(err)
-
-		elem := blockingQueue.GetWait()
-		i.Equal(1, elem)
-
-		blockingQueue.Reset()
-
-		_, err = blockingQueue.Get()
-
-		i.Equal(queue.ErrNoElementsAvailable, err)
-	})
-
 	t.Run("Consistency", func(t *testing.T) {
 		t.Parallel()
 
@@ -142,7 +117,6 @@ func TestBlocking(t *testing.T) {
 			wg.Wait()
 		})
 
-		//nolint: revive // line too long
 		t.Run("ResetWhileMoreRoutinesThanElementsAreWaiting", func(t *testing.T) {
 			t.Parallel()
 
@@ -276,7 +250,7 @@ func TestBlocking(t *testing.T) {
 
 			elems := []int{1, 2, 3}
 
-			blockingQueue := queue.NewBlocking(elems)
+			blockingQueue := queue.NewBlocking[int](elems)
 
 			drainQueue[int](blockingQueue)
 
@@ -456,7 +430,7 @@ func testResetOnMultipleRoutinesFunc[T any](
 	ids []T,
 	totalRoutines int,
 ) func(t *testing.T) {
-	//nolint: thelper // not a test helper
+	// nolint: thelper // not a test helper
 	return func(t *testing.T) {
 		blockingQueue := queue.NewBlocking(ids)
 

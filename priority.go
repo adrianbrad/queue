@@ -6,14 +6,8 @@ import (
 	"sync"
 )
 
-// Lesser is the interface that wraps basic Less method.
-type Lesser interface {
-	// Less compares the caller to the other
-	Less(other any) bool
-}
-
 // Ensure Priority implements the heap.Interface.
-var _ heap.Interface = (*priorityHeap[noopLesser])(nil)
+var _ heap.Interface = (*priorityHeap[any])(nil)
 
 // priorityHeap implements the heap.Interface, thus enabling this struct
 // to be accepted as a parameter for the methods available in the heap package.
@@ -58,13 +52,8 @@ func (h *priorityHeap[T]) Pop() any {
 	return elem
 }
 
-// fifoLessFunc will keep the elements in a fifo order.
-// This is the default less function used if no less function is provided
-// for the priority queue.
-func fifoLessFunc[T any](T, T) bool { return false }
-
 // Ensure Priority implements the Queue interface.
-var _ Queue[noopLesser] = (*Priority[noopLesser])(nil)
+var _ Queue[any] = (*Priority[any])(nil)
 
 // Priority is a Queue implementation.
 // ! The elements must implement the Lesser interface.
@@ -86,16 +75,20 @@ type Priority[T any] struct {
 	capacity *int
 
 	// synchronization
-	lock     sync.RWMutex
-	initOnce sync.Once
+	lock sync.RWMutex
 }
 
-// NewPriority returns a new Priority Queue containing the given elements.
+// NewPriority creates a new Priority Queue containing the given elements.
+// It panics if lessFunc is nil.
 func NewPriority[T any](
 	elems []T,
-	lessFunc func(elem, elemAfter T) bool,
+	lessFunc func(elem, otherElem T) bool,
 	opts ...Option,
 ) *Priority[T] {
+	if lessFunc == nil {
+		panic("nil less func")
+	}
+
 	// default options
 	options := options{
 		capacity: nil,
@@ -107,10 +100,6 @@ func NewPriority[T any](
 
 	if elems == nil {
 		elems = []T{}
-	}
-
-	if lessFunc == nil {
-		lessFunc = fifoLessFunc[T]
 	}
 
 	elementsHeap := &priorityHeap[T]{
@@ -140,8 +129,6 @@ func NewPriority[T any](
 		capacity:        options.capacity,
 	}
 
-	pq.init()
-
 	return pq
 }
 
@@ -152,8 +139,6 @@ func NewPriority[T any](
 func (pq *Priority[T]) Offer(elem T) error {
 	pq.lock.Lock()
 	defer pq.lock.Unlock()
-
-	pq.init()
 
 	if pq.capacity != nil && pq.elements.Len() >= *pq.capacity {
 		return ErrQueueIsFull
@@ -169,8 +154,6 @@ func (pq *Priority[T]) Offer(elem T) error {
 func (pq *Priority[T]) Reset() {
 	pq.lock.Lock()
 	defer pq.lock.Unlock()
-
-	pq.init()
 
 	if pq.elements.Len() > len(pq.initialElements) {
 		pq.elements.elems = (pq.elements.elems)[:len(pq.initialElements)]
@@ -191,8 +174,6 @@ func (pq *Priority[T]) Get() (elem T, _ error) {
 	pq.lock.Lock()
 	defer pq.lock.Unlock()
 
-	pq.init()
-
 	if pq.elements.Len() == 0 {
 		return elem, ErrNoElementsAvailable
 	}
@@ -210,8 +191,6 @@ func (pq *Priority[T]) Peek() (elem T, _ error) {
 	pq.lock.RLock()
 	defer pq.lock.RUnlock()
 
-	pq.init()
-
 	if pq.elements.Len() == 0 {
 		return elem, ErrNoElementsAvailable
 	}
@@ -224,17 +203,5 @@ func (pq *Priority[T]) Size() int {
 	pq.lock.RLock()
 	defer pq.lock.RUnlock()
 
-	pq.init()
-
 	return pq.elements.Len()
-}
-
-func (pq *Priority[T]) init() {
-	pq.initOnce.Do(func() {
-		if pq.elements == nil {
-			pq.elements = &priorityHeap[T]{
-				lessFunc: fifoLessFunc[T],
-			}
-		}
-	})
 }

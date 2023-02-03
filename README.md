@@ -13,23 +13,97 @@
 
 ---
 
-Queue is a Go package that provides multiple thread-safe generic queue implementations.
+Multiple thread-safe generic queue implementations.
 
 A queue is a sequence of entities that is open at both ends where he elements are 
 added(enqueued) to the tail(back) of the queue and removed(dequeued) from the head(front) of the queue.
 
-### Notable characteristics
-- Usable zero values.
-- The queues can be reset to their initial state.
-- Implementations satisfy the `Queue` interface.
-- Example tests are provided.
+Benchmarks and Example tests can be found in this package.
 
-## Blocking Queue
+All queues implement the `Queue` interface
+
+## Installation
+
+`go get -u github.com/adrianbrad/queue`
+
+### Blocking Queue
 - FIFO Ordering 
-- Waits for the queue have elements available before retrieving from it.
+- Provides blocking and non-blocking methods. The non-blocking methods return an error.
 - Implemented using `sync.Cond` from standard library.
 
-## Priority Queue
-- Order based on the `Less` method implemented by elements.
-- Waits for the queue have elements available before retrieving from it.
+#### Quick start
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/adrianbrad/queue"
+)
+
+func main() {
+	elems := []int{2, 3}
+
+	priorityQueue := queue.NewBlocking(elems, queue.WithCapacity(3))
+
+	if err := priorityQueue.Offer(1); err != nil {
+		// handle err
+	}
+
+	elem, err := priorityQueue.Get()
+	if err != nil {
+		// handle err
+	}
+
+	fmt.Printf("elem: %d\n", elem) // elem: 2
+}
+```
+
+### Priority Queue
+- Order based on the `less` method provided at construction.
 - Implemented using `container/heap` standard library package.
+
+#### Quick Start
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/adrianbrad/queue"
+)
+
+func main() {
+	elems := []int{2, 3, 4}
+
+	priorityQueue := queue.NewPriority(elems, func(elem, otherElem int) bool {
+		return elem < otherElem
+	})
+
+	if err := priorityQueue.Offer(1); err != nil {
+		// handle err
+	}
+
+	elem, err := priorityQueue.Get()
+	if err != nil {
+		// handle err
+	}
+
+	fmt.Printf("elem: %d\n", elem) // elem: 1
+}
+```
+
+## Benchmarks 
+
+Results as of 3rd of February 2023.
+
+```
+BenchmarkBlockingQueue/Peek-12          63275360                19.44 ns/op            0 B/op          0 allocs/op
+BenchmarkBlockingQueue/Get_Offer-12     19066974                69.67 ns/op           40 B/op          0 allocs/op
+BenchmarkBlockingQueue/Offer-12         36569245                37.86 ns/op           41 B/op          0 allocs/op
+BenchmarkPriorityQueue/Peek-12          66765319                15.86 ns/op            0 B/op          0 allocs/op
+BenchmarkPriorityQueue/Get_Offer-12     16677442                71.33 ns/op            0 B/op          0 allocs/op
+BenchmarkPriorityQueue/Offer-12         20044909                58.58 ns/op           55 B/op          0 allocs/op
+```

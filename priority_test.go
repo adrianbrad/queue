@@ -1,7 +1,7 @@
 package queue_test
 
 import (
-	"fmt"
+	"sort"
 	"testing"
 
 	"github.com/adrianbrad/queue"
@@ -18,25 +18,6 @@ func TestPriority(t *testing.T) {
 	lessInt := func(elem, elemAfter int) bool {
 		return elem < elemAfter
 	}
-
-	t.Run("ValidZeroValue", func(t *testing.T) {
-		t.Parallel()
-
-		i := is.New(t)
-
-		var priorityQueue queue.Priority[int]
-
-		_, err := priorityQueue.Get()
-
-		i.Equal(queue.ErrNoElementsAvailable, err)
-
-		err = priorityQueue.Offer(1)
-		i.NoErr(err)
-
-		elem, err := priorityQueue.Get()
-		i.NoErr(err)
-		i.Equal(int(1), elem)
-	})
 
 	t.Run("CapacityLesserThanLenElems", func(t *testing.T) {
 		t.Parallel()
@@ -137,7 +118,7 @@ func TestPriority(t *testing.T) {
 
 			i := is.New(t)
 
-			priorityQueue := queue.NewPriority([]int{}, nil)
+			priorityQueue := queue.NewPriority([]int{}, func(_, _ int) bool { return false })
 
 			_, err := priorityQueue.Get()
 
@@ -191,7 +172,7 @@ func TestPriority(t *testing.T) {
 
 			i := is.New(t)
 
-			priorityQueue := queue.NewPriority([]int{}, nil)
+			priorityQueue := queue.NewPriority([]int{}, func(_, _ int) bool { return false })
 
 			_, err := priorityQueue.Peek()
 
@@ -237,7 +218,7 @@ func TestPriority(t *testing.T) {
 }
 
 func FuzzPriority(f *testing.F) {
-	testcases := [][]byte{{1, 2, 3}, {4, 5, 6}, {9, 8, 7}}
+	testcases := [][]byte{{2, 10, 8, 4}, {11, 9, 7}, {8, 24, 255}}
 	for _, tc := range testcases {
 		f.Add(tc)
 	}
@@ -246,8 +227,14 @@ func FuzzPriority(f *testing.F) {
 		return elem < elemAfter
 	}
 
-	testFunc := func(t *testing.T, priorityQueue *queue.Priority[byte], orig []byte) {
+	f.Fuzz(func(t *testing.T, orig []byte) {
 		i := is.New(t)
+
+		sort.Slice(orig, func(i, j int) bool {
+			return orig[i] < orig[j]
+		})
+
+		priorityQueue := queue.NewPriority(nil, lessFunc)
 
 		for _, v := range orig {
 			err := priorityQueue.Offer(v)
@@ -255,8 +242,6 @@ func FuzzPriority(f *testing.F) {
 		}
 
 		for _, v := range orig {
-			t.Logf("v: %d", v)
-
 			peekedVal, err := priorityQueue.Peek()
 			i.NoErr(err)
 
@@ -267,54 +252,5 @@ func FuzzPriority(f *testing.F) {
 
 			i.Equal(peekedVal, getVal)
 		}
-	}
-
-	f.Fuzz(func(t *testing.T, orig []byte) {
-		t.Run("ZeroValue", func(t *testing.T) {
-			// t.Parallel()
-
-			priorityQueue := &queue.Priority[byte]{}
-
-			testFunc(t, priorityQueue, orig)
-		})
-
-		t.Run("Constructor", func(t *testing.T) {
-			// t.Parallel()
-
-			priorityQueue := queue.NewPriority(nil, lessFunc)
-
-			testFunc(t, priorityQueue, orig)
-		})
 	})
-}
-
-func TestZeroVal(t *testing.T) {
-	vs := []byte{1, 2, 3, 4}
-
-	q := &queue.Priority[byte]{}
-
-	i := is.New(t)
-
-	for _, v := range vs {
-		err := q.Offer(v)
-		i.NoErr(err)
-	}
-
-	fmt.Println(q.Peek())
-	fmt.Println(q.Get())
-	fmt.Println(q.Peek())
-	fmt.Println(q.Get())
-	fmt.Println(q.Peek())
-	fmt.Println(q.Get())
-	fmt.Println(q.Peek())
-	fmt.Println(q.Get())
-
-	q = queue.NewPriority[byte](vs, func(elem, elemAfter byte) bool {
-		return elem < elemAfter
-	})
-
-	fmt.Println(q.Peek())
-	fmt.Println(q.Get())
-	fmt.Println(q.Peek())
-	fmt.Println(q.Get())
 }

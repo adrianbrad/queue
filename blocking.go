@@ -25,10 +25,9 @@ type Blocking[T any] struct {
 	capacity *int
 
 	// synchronization
-	initCondsOnce sync.Once
-	lock          sync.Mutex
-	notEmptyCond  *sync.Cond
-	notFullCond   *sync.Cond
+	lock         sync.Mutex
+	notEmptyCond *sync.Cond
+	notFullCond  *sync.Cond
 }
 
 // NewBlocking returns a new Blocking Queue containing the given elements.
@@ -52,7 +51,8 @@ func NewBlocking[T any](
 		lock:          sync.Mutex{},
 	}
 
-	queue.initConds()
+	queue.notEmptyCond = sync.NewCond(&queue.lock)
+	queue.notFullCond = sync.NewCond(&queue.lock)
 
 	if queue.capacity != nil {
 		if len(queue.elements) > *queue.capacity {
@@ -63,15 +63,6 @@ func NewBlocking[T any](
 	return queue
 }
 
-// initConds can only be run once, it enables the Blocking queue to have
-// a valid zero value.
-func (bq *Blocking[T]) initConds() {
-	bq.initCondsOnce.Do(func() {
-		bq.notEmptyCond = sync.NewCond(&bq.lock)
-		bq.notFullCond = sync.NewCond(&bq.lock)
-	})
-}
-
 // ==================================Insertion=================================
 
 // OfferWait inserts the element to the tail the queue.
@@ -79,8 +70,6 @@ func (bq *Blocking[T]) initConds() {
 func (bq *Blocking[T]) OfferWait(elem T) {
 	bq.lock.Lock()
 	defer bq.lock.Unlock()
-
-	bq.initConds()
 
 	if bq.isFull() {
 		bq.notFullCond.Wait()
@@ -96,8 +85,6 @@ func (bq *Blocking[T]) OfferWait(elem T) {
 func (bq *Blocking[T]) Offer(elem T) error {
 	bq.lock.Lock()
 	defer bq.lock.Unlock()
-
-	bq.initConds()
 
 	if bq.isFull() {
 		return ErrQueueIsFull
@@ -115,8 +102,6 @@ func (bq *Blocking[T]) Offer(elem T) error {
 func (bq *Blocking[T]) Reset() {
 	bq.lock.Lock()
 	defer bq.lock.Unlock()
-
-	bq.initConds()
 
 	bq.elementsIndex = 0
 
@@ -137,8 +122,6 @@ func (bq *Blocking[T]) GetWait() (v T) {
 	bq.lock.Lock()
 	defer bq.lock.Unlock()
 
-	bq.initConds()
-
 	defer bq.notFullCond.Signal()
 
 	idx := bq.getNextIndexOrWait()
@@ -158,8 +141,6 @@ func (bq *Blocking[T]) GetWait() (v T) {
 func (bq *Blocking[T]) Get() (v T, _ error) {
 	bq.lock.Lock()
 	defer bq.lock.Unlock()
-
-	bq.initConds()
 
 	defer bq.notFullCond.Signal()
 
@@ -182,8 +163,6 @@ func (bq *Blocking[T]) Peek() (v T, _ error) {
 	bq.lock.Lock()
 	defer bq.lock.Unlock()
 
-	bq.initConds()
-
 	if bq.isEmpty() {
 		return v, ErrNoElementsAvailable
 	}
@@ -199,8 +178,6 @@ func (bq *Blocking[T]) Peek() (v T, _ error) {
 func (bq *Blocking[T]) PeekWait() T {
 	bq.lock.Lock()
 	defer bq.lock.Unlock()
-
-	bq.initConds()
 
 	if bq.isEmpty() {
 		bq.notEmptyCond.Wait()

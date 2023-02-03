@@ -99,7 +99,7 @@ linters-settings:
       - name: max-public-structs
         disabled: true
       - name: line-length-limit
-        arguments: [ 80 ]
+        arguments: [ 100 ]
       - name: argument-limit
         disabled: true
       - name: cyclomatic
@@ -113,6 +113,8 @@ linters-settings:
       - name: add-constant
         disabled: true
       - name: unhandled-error
+        disabled: true
+      - name: modifies-parameter
         disabled: true
       - name: var-naming
         arguments: [[], ["WS", "VM"]]
