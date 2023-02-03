@@ -19,6 +19,17 @@ func TestPriority(t *testing.T) {
 		return elem < elemAfter
 	}
 
+	t.Run("NilLessFunc", func(t *testing.T) {
+		i := is.New(t)
+
+		defer func() {
+			p := recover()
+			i.Equal("nil less func", p)
+		}()
+
+		queue.NewPriority[any](nil, nil)
+	})
+
 	t.Run("CapacityLesserThanLenElems", func(t *testing.T) {
 		t.Parallel()
 
