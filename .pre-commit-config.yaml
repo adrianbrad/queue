@@ -1,15 +1,15 @@
 repos:
   - repo: https://github.com/commitizen-tools/commitizen
-    rev: v2.32.2
+    rev: v2.42.1
     hooks:
       - id: commitizen
-#  - repo: https://github.com/golangci/golangci-lint
-#    rev: v1.50.1
-#    hooks:
-#      - id: golangci-lint
-#        name: golangci-lint
-#        description: Fast linters runner for Go.
-#        entry: golangci-lint run --fix --config .golangci.yml
-#        types: [go]
-#        language: golang
-#        pass_filenames: false
+  - repo: https://github.com/golangci/golangci-lint
+    rev: v1.52.0
+    hooks:
+      - id: golangci-lint
+        name: golangci-lint
+        description: Fast linters runner for Go.
+        entry: golangci-lint run --fix --config .golangci.yml
+        types: [go]
+        language: golang
+        pass_filenames: false

@@ -137,6 +137,22 @@ func TestBlocking(t *testing.T) {
 		})
 	})
 
+	t.Run("Clear", func(t *testing.T) {
+		t.Parallel()
+	})
+
+	t.Run("Contains", func(t *testing.T) {
+		t.Parallel()
+	})
+
+	t.Run("Iterator", func(t *testing.T) {
+		t.Parallel()
+	})
+
+	t.Run("IsEmpty", func(t *testing.T) {
+		t.Parallel()
+	})
+
 	t.Run("Reset", func(t *testing.T) {
 		t.Parallel()
 
@@ -426,11 +442,11 @@ func TestBlocking(t *testing.T) {
 	})
 }
 
-func testResetOnMultipleRoutinesFunc[T any](
+func testResetOnMultipleRoutinesFunc[T comparable](
 	ids []T,
 	totalRoutines int,
 ) func(t *testing.T) {
-	//nolint: thelper // not a test helper
+	// nolint: thelper // not a test helper
 	return func(t *testing.T) {
 		blockingQueue := queue.NewBlocking(ids)
 

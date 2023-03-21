@@ -1,4 +1,4 @@
 commitizen:
   name: cz_conventional_commits
   tag_format: v$version
-  version: 0.9.0
+  version: 1.0.0

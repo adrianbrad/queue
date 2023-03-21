@@ -11,7 +11,7 @@ var _ heap.Interface = (*priorityHeap[any])(nil)
 
 // priorityHeap implements the heap.Interface, thus enabling this struct
 // to be accepted as a parameter for the methods available in the heap package.
-type priorityHeap[T any] struct {
+type priorityHeap[T comparable] struct {
 	elems    []T
 	lessFunc func(elem, otherElem T) bool
 }
@@ -34,7 +34,7 @@ func (h *priorityHeap[T]) Swap(i, j int) {
 
 // Push inserts elem into the heap.
 func (h *priorityHeap[T]) Push(elem any) {
-	//nolint: forcetypeassert // since priorityHeap is unexported, this
+	// nolint: forcetypeassert // since priorityHeap is unexported, this
 	// method cannot be directly called by a library client, it is only called
 	// by the heap package functions. Thus, it is safe to expect that the
 	// input parameter `elem` type is always T.
@@ -68,7 +68,7 @@ var _ Queue[any] = (*Priority[any])(nil)
 // can be defined by using the following operators:
 // > - for ascending order
 // < - for descending order.
-type Priority[T any] struct {
+type Priority[T comparable] struct {
 	initialElements []T
 	elements        *priorityHeap[T]
 
@@ -80,7 +80,7 @@ type Priority[T any] struct {
 
 // NewPriority creates a new Priority Queue containing the given elements.
 // It panics if lessFunc is nil.
-func NewPriority[T any](
+func NewPriority[T comparable](
 	elems []T,
 	lessFunc func(elem, otherElem T) bool,
 	opts ...Option,
@@ -178,13 +178,76 @@ func (pq *Priority[T]) Get() (elem T, _ error) {
 		return elem, ErrNoElementsAvailable
 	}
 
-	//nolint: forcetypeassert // since the heap package does not yet support
+	// nolint: forcetypeassert // since the heap package does not yet support
 	// generic types it has to use the `any` type. In this case, by design,
 	// type of the items available in the pq.elements collection is always T.
 	return heap.Pop(pq.elements).(T), nil
 }
 
+// Clear removes all elements from the queue.
+func (pq *Priority[T]) Clear() []T {
+	pq.lock.Lock()
+	defer pq.lock.Unlock()
+
+	elems := make([]T, pq.elements.Len())
+
+	for i := 0; i < pq.elements.Len(); i++ {
+		// nolint: forcetypeassert // since priorityHeap is unexported, this
+		// method cannot be directly called by a library client, it is only called
+		// by the heap package functions. Thus, it is safe to expect that the
+		// input parameter `elem` type is always T.
+		elems[i] = heap.Pop(pq.elements).(T)
+	}
+
+	return elems
+}
+
+// Iterator returns an iterator over the elements in the queue.
+// It removes the elements from the queue.
+func (pq *Priority[T]) Iterator() <-chan T {
+	pq.lock.RLock()
+	defer pq.lock.RUnlock()
+
+	// use a buffered channel to avoid blocking the iterator.
+	iteratorCh := make(chan T, pq.elements.Len())
+
+	go func() {
+		// close the channel when the function returns.
+		defer close(iteratorCh)
+
+		// iterate over the elements and send them to the channel.
+		for pq.elements.Len() > 0 {
+			// nolint: forcetypeassert // since priorityHeap is unexported, this
+			// method cannot be directly called by a library client, it is only called
+			// by the heap package functions. Thus, it is safe to expect that the
+			// input parameter `elem` type is always T.
+			iteratorCh <- heap.Pop(pq.elements).(T)
+		}
+	}()
+
+	return iteratorCh
+}
+
 // =================================Examination================================
+
+// IsEmpty returns true if the queue is empty, false otherwise.
+func (pq *Priority[T]) IsEmpty() bool {
+	return pq.elements.Len() == 0
+}
+
+// Contains returns true if the queue contains the element, false otherwise.
+func (pq *Priority[T]) Contains(a T) bool {
+	pq.lock.Lock()
+	defer pq.lock.Unlock()
+
+	for i := range pq.elements.elems {
+		if pq.elements.elems[i] == a {
+			return true
+		}
+	}
+
+	return false
+}
 
 // Peek retrieves but does not return the head of the queue.
 func (pq *Priority[T]) Peek() (elem T, _ error) {

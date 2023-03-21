@@ -4,7 +4,7 @@ import (
 	"github.com/adrianbrad/queue"
 )
 
-func drainQueue[T any](q queue.Queue[T]) []T {
+func drainQueue[T comparable](q queue.Queue[T]) []T {
 	size := q.Size()
 
 	elems := make([]T, size)

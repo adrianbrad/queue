@@ -15,7 +15,7 @@ var _ Queue[any] = (*Blocking[any])(nil)
 // It supports operations for retrieving and adding elements to a FIFO queue.
 // If there are no elements available the retrieve operations wait until
 // elements are added to the queue.
-type Blocking[T any] struct {
+type Blocking[T comparable] struct {
 	// elements queue
 	elements      []T
 	elementsIndex int
@@ -31,7 +31,7 @@ type Blocking[T any] struct {
 }
 
 // NewBlocking returns a new Blocking Queue containing the given elements.
-func NewBlocking[T any](
+func NewBlocking[T comparable](
 	elems []T,
 	opts ...Option,
 ) *Blocking[T] {
@@ -142,17 +142,49 @@ func (bq *Blocking[T]) Get() (v T, _ error) {
 	bq.lock.Lock()
 	defer bq.lock.Unlock()
 
-	defer bq.notFullCond.Signal()
+	return bq.get()
+}
 
-	if bq.isEmpty() {
-		return v, ErrNoElementsAvailable
-	}
+// Clear removes and returns all elements from the queue.
+func (bq *Blocking[T]) Clear() []T {
+	bq.lock.Lock()
+	defer bq.lock.Unlock()
 
-	elem := bq.elements[bq.elementsIndex]
+	defer bq.notFullCond.Broadcast()
 
-	bq.elementsIndex++
+	removed := bq.elements[bq.elementsIndex:]
 
-	return elem, nil
+	bq.elementsIndex += len(removed)
+
+	return removed
+}
+
+// Iterator returns an iterator over the elements in this queue.
+// Iterator returns an iterator over the elements in the queue.
+// It removes the elements from the queue.
+func (bq *Blocking[T]) Iterator() <-chan T {
+	bq.lock.Lock()
+	defer bq.lock.Unlock()
+
+	// use a buffered channel to avoid blocking the iterator.
+	iteratorCh := make(chan T, bq.size())
+
+	go func() {
+		// close the channel when the function returns.
+		defer close(iteratorCh)
+
+		// iterate over the elements and send them to the channel.
+		for {
+			elem, err := bq.Get()
+			if err != nil {
+				break
+			}
+
+			iteratorCh <- elem
+		}
+	}()
+
+	return iteratorCh
 }
 
 // =================================Examination================================
@@ -196,11 +228,34 @@ func (bq *Blocking[T]) Size() int {
 	bq.lock.Lock()
 	defer bq.lock.Unlock()
 
-	return len(bq.elements) - bq.elementsIndex
+	return bq.size()
+}
+
+// Contains returns true if the queue contains the given element.
+func (bq *Blocking[T]) Contains(elem T) bool {
+	bq.lock.Lock()
+	defer bq.lock.Unlock()
+
+	for i := range bq.elements[bq.elementsIndex:] {
+		if bq.elements[i] == elem {
+			return true
+		}
+	}
+
+	return false
+}
+
+// IsEmpty returns true if the queue is empty.
+func (bq *Blocking[T]) IsEmpty() bool {
+	bq.lock.Lock()
+	defer bq.lock.Unlock()
+
+	return bq.isEmpty()
 }
 
 // ===================================Helpers==================================
 
+// getNextIndexOrWait returns the next available index of the elements slice.
 func (bq *Blocking[T]) getNextIndexOrWait() int {
 	if !bq.isEmpty() {
 		return bq.elementsIndex
@@ -211,14 +266,34 @@ func (bq *Blocking[T]) getNextIndexOrWait() int {
 	return bq.getNextIndexOrWait()
 }
 
+// isEmpty returns true if the queue is empty.
 func (bq *Blocking[T]) isEmpty() bool {
 	return bq.elementsIndex >= len(bq.elements)
 }
 
+// isFull returns true if the queue is full.
 func (bq *Blocking[T]) isFull() bool {
 	if bq.capacity == nil {
 		return false
 	}
 
 	return len(bq.elements)-bq.elementsIndex >= *bq.capacity
+}
+
+func (bq *Blocking[T]) size() int {
+	return len(bq.elements) - bq.elementsIndex
+}
+
+func (bq *Blocking[T]) get() (v T, _ error) {
+	defer bq.notFullCond.Signal()
+
+	if bq.isEmpty() {
+		return v, ErrNoElementsAvailable
+	}
+
+	elem := bq.elements[bq.elementsIndex]
+
+	bq.elementsIndex++
+
+	return elem, nil
 }

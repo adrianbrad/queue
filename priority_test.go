@@ -137,6 +137,22 @@ func TestPriority(t *testing.T) {
 		})
 	})
 
+	t.Run("Clear", func(t *testing.T) {
+		t.Parallel()
+	})
+
+	t.Run("Contains", func(t *testing.T) {
+		t.Parallel()
+	})
+
+	t.Run("Iterator", func(t *testing.T) {
+		t.Parallel()
+	})
+
+	t.Run("IsEmpty", func(t *testing.T) {
+		t.Parallel()
+	})
+
 	t.Run("Peek", func(t *testing.T) {
 		t.Parallel()
 

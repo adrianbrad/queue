@@ -18,20 +18,47 @@ Multiple thread-safe generic queue implementations.
 A queue is a sequence of entities that is open at both ends where he elements are 
 added(enqueued) to the tail(back) of the queue and removed(dequeued) from the head(front) of the queue.
 
+Queues implemented in this package are designed to be easy to use and provide a consistent API.
+
 Benchmarks and Example tests can be found in this package.
 
-All queues implement the `Queue` interface
+### Installation
 
-## Installation
+```
+go get -u github.com/adrianbrad/queue
+```
 
-`go get -u github.com/adrianbrad/queue`
+### Import
 
-### Blocking Queue
+```go
+import "github.com/adrianbrad/queue"
+```
+
+### Usage
+
+
+#### Queue Interface
+
+```go
+// Queue is a generic queue interface, defining the methods that all queues must implement.
+type Queue[T comparable] interface {
+	Get() (T, error)
+	Offer(T) error
+	Reset()
+	Peek() (T, error)
+	Size() int
+	IsEmpty() bool
+	Iterator() <-chan T
+	Clear() []T
+}
+```
+
+#### Blocking Queue
 - FIFO Ordering 
 - Provides blocking and non-blocking methods. The non-blocking methods return an error.
 - Implemented using `sync.Cond` from standard library.
 
-#### Quick start
+##### Quick start
 
 ```go
 package main
@@ -60,11 +87,11 @@ func main() {
 }
 ```
 
-### Priority Queue
+#### Priority Queue
 - Order based on the `less` method provided at construction.
 - Implemented using `container/heap` standard library package.
 
-#### Quick Start
+##### Quick Start
 
 ```go
 package main
