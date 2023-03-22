@@ -1,3 +1,3 @@
-module github.com/adrianbrad/queue/v2
+module github.com/adrianbrad/queue
 
 go 1.20

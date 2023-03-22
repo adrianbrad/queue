@@ -3,7 +3,7 @@ package queue_test
 import (
 	"fmt"
 
-	"github.com/adrianbrad/queue/v2"
+	"github.com/adrianbrad/queue"
 )
 
 func ExamplePriority() {
