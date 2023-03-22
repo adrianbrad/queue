@@ -13,22 +13,33 @@
 
 ---
 
-Multiple thread-safe generic queue implementations.
+### Overview 
 
-A queue is a sequence of entities that is open at both ends where he elements are 
-added(enqueued) to the tail(back) of the queue and removed(dequeued) from the head(front) of the queue.
+The queue package provides multiple thread-safe generic queue implementations in Go.
+
+A queue is a sequence of entities that is open at both ends where the elements are
+added (enqueued) to the tail (back) of the queue and removed (dequeued) from the head (front) of the queue.
 
 Queues implemented in this package are designed to be easy to use and provide a consistent API.
 
 Benchmarks and Example tests can be found in this package.
 
+### Features
+The queue package provides two types of queues:
+
+- Blocking Queue: FIFO Ordering, provides blocking and non-blocking methods. The non-blocking methods return an error. Implemented using sync.Cond from the standard library.
+
+- Priority Queue: Order based on the less function provided at construction. Implemented using container/heap standard library package.
+
 ### Installation
+To add this package as a dependency to your project, run:
 
 ```
 go get -u github.com/adrianbrad/queue
 ```
 
 ### Import
+To use this package in your project, you can import it as follows:
 
 ```go
 import "github.com/adrianbrad/queue"
@@ -53,12 +64,9 @@ type Queue[T comparable] interface {
 }
 ```
 
-#### Blocking Queue
-- FIFO Ordering 
-- Provides blocking and non-blocking methods. The non-blocking methods return an error.
-- Implemented using `sync.Cond` from standard library.
+#### Quick Start
 
-##### Quick start
+##### Blocking Queue
 
 ```go
 package main
@@ -87,11 +95,7 @@ func main() {
 }
 ```
 
-#### Priority Queue
-- Order based on the `less` method provided at construction.
-- Implemented using `container/heap` standard library package.
-
-##### Quick Start
+##### Priority Queue
 
 ```go
 package main
@@ -105,9 +109,10 @@ import (
 func main() {
 	elems := []int{2, 3, 4}
 
-	priorityQueue := queue.NewPriority(elems, func(elem, otherElem int) bool {
-		return elem < otherElem
-	})
+	priorityQueue := queue.NewPriority(
+		elems, 
+		func(elem, otherElem int) bool { return elem < otherElem },
+    )
 
 	if err := priorityQueue.Offer(1); err != nil {
 		// handle err
