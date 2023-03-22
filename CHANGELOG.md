@@ -1,3 +1,13 @@
+## v2.0.0 (2023-03-22)
+
+### BREAKING CHANGE
+
+- change the queue type parameter from `any` to `comparable`
+
+### Feat
+
+- add `Contains`, `Peek`, `Size`, `IsEmpty`, `Iterator` and `Clear` methods to the Queue interface and implementations. In order to implement the `Contains` method the type parameter used by the queues was changed to `comparable` from `any`
+
 ## v0.9.0 (2023-02-03)
 
 ### Feat
