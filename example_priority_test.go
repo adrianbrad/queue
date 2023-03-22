@@ -25,7 +25,7 @@ func ExamplePriority() {
 	}
 
 	fmt.Println(pAsc.Offer(5))
-	fmt.Println(drainQueue[int](pAsc))
+	fmt.Println(pAsc.Clear())
 	fmt.Println(pAsc.Get())
 
 	fmt.Printf("\nDescending:\n")
@@ -45,7 +45,7 @@ func ExamplePriority() {
 		return
 	}
 
-	fmt.Println(drainQueue[int](pDesc))
+	fmt.Println(pDesc.Clear())
 
 	// Output:
 	// Ascending:

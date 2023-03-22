@@ -98,12 +98,12 @@ func NewPriority[T comparable](
 		o.apply(&options)
 	}
 
-	if elems == nil {
-		elems = []T{}
-	}
+	heapElems := make([]T, len(elems))
+
+	copy(heapElems, elems)
 
 	elementsHeap := &priorityHeap[T]{
-		elems:    elems,
+		elems:    heapElems,
 		lessFunc: lessFunc,
 	}
 
@@ -189,9 +189,11 @@ func (pq *Priority[T]) Clear() []T {
 	pq.lock.Lock()
 	defer pq.lock.Unlock()
 
-	elems := make([]T, pq.elements.Len())
+	elemsLen := pq.elements.Len()
 
-	for i := 0; i < pq.elements.Len(); i++ {
+	elems := make([]T, elemsLen)
+
+	for i := 0; i < elemsLen; i++ {
 		// nolint: forcetypeassert // since priorityHeap is unexported, this
 		// method cannot be directly called by a library client, it is only called
 		// by the heap package functions. Thus, it is safe to expect that the
@@ -211,19 +213,16 @@ func (pq *Priority[T]) Iterator() <-chan T {
 	// use a buffered channel to avoid blocking the iterator.
 	iteratorCh := make(chan T, pq.elements.Len())
 
-	go func() {
-		// close the channel when the function returns.
-		defer close(iteratorCh)
+	// iterate over the elements and send them to the channel.
+	for pq.elements.Len() > 0 {
+		// nolint: forcetypeassert // since priorityHeap is unexported, this
+		// method cannot be directly called by a library client, it is only called
+		// by the heap package functions. Thus, it is safe to expect that the
+		// input parameter `elem` type is always T.
+		iteratorCh <- heap.Pop(pq.elements).(T)
+	}
 
-		// iterate over the elements and send them to the channel.
-		for pq.elements.Len() > 0 {
-			// nolint: forcetypeassert // since priorityHeap is unexported, this
-			// method cannot be directly called by a library client, it is only called
-			// by the heap package functions. Thus, it is safe to expect that the
-			// input parameter `elem` type is always T.
-			iteratorCh <- heap.Pop(pq.elements).(T)
-		}
-	}()
+	close(iteratorCh)
 
 	return iteratorCh
 }

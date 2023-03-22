@@ -169,20 +169,18 @@ func (bq *Blocking[T]) Iterator() <-chan T {
 	// use a buffered channel to avoid blocking the iterator.
 	iteratorCh := make(chan T, bq.size())
 
-	go func() {
-		// close the channel when the function returns.
-		defer close(iteratorCh)
+	// close the channel when the function returns.
+	defer close(iteratorCh)
 
-		// iterate over the elements and send them to the channel.
-		for {
-			elem, err := bq.Get()
-			if err != nil {
-				break
-			}
-
-			iteratorCh <- elem
+	// iterate over the elements and send them to the channel.
+	for {
+		elem, err := bq.get()
+		if err != nil {
+			break
 		}
-	}()
+
+		iteratorCh <- elem
+	}
 
 	return iteratorCh
 }

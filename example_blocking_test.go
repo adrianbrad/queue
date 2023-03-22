@@ -12,7 +12,7 @@ func ExampleBlocking() {
 
 	blockingQueue := queue.NewBlocking(elems, queue.WithCapacity(4))
 
-	fmt.Println(drainQueue[int](blockingQueue))
+	fmt.Println(blockingQueue.Clear())
 
 	var (
 		elem  int

@@ -1,14 +1,15 @@
 package queue_test
 
 import (
+	"errors"
 	"fmt"
+	"reflect"
 	"sort"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/adrianbrad/queue"
-	"github.com/matryer/is"
 )
 
 func TestBlocking(t *testing.T) {
@@ -17,21 +18,19 @@ func TestBlocking(t *testing.T) {
 	t.Run("Consistency", func(t *testing.T) {
 		t.Parallel()
 
-		i := is.New(t)
-
 		t.Run("SequentialIteration", func(t *testing.T) {
 			t.Parallel()
-
-			i := is.New(t)
 
 			elems := []int{1, 2, 3}
 
 			blockingQueue := queue.NewBlocking(elems)
 
 			for j := range elems {
-				id := blockingQueue.GetWait()
+				elem := blockingQueue.GetWait()
 
-				i.Equal(elems[j], id)
+				if elems[j] != elem {
+					t.Fatalf("expected elem to be %d, got %d", elems[j], elem)
+				}
 			}
 		})
 
@@ -75,13 +74,13 @@ func TestBlocking(t *testing.T) {
 				return result[i] < result[j]
 			})
 
-			i.Equal(ids, result)
+			if !reflect.DeepEqual(ids, result) {
+				t.Fatalf("expected result to be %v, got %v", ids, result)
+			}
 		})
 
 		t.Run("PeekWaitAndPushWaiting", func(t *testing.T) {
 			t.Parallel()
-
-			i := is.New(t)
 
 			elems := []int{1}
 
@@ -102,8 +101,12 @@ func TestBlocking(t *testing.T) {
 				defer close(peekDone)
 
 				elem := blockingQueue.PeekWait()
-				fmt.Println("peek done")
-				i.Equal(elems[0], elem)
+
+				t.Logf("peek done")
+
+				if elems[0] != elem {
+					t.Errorf("expected elem to be %d, got %d", elems[0], elem)
+				}
 			}()
 
 			go func() {
@@ -111,7 +114,9 @@ func TestBlocking(t *testing.T) {
 				<-peekDone
 
 				elem := blockingQueue.GetWait()
-				i.Equal(elems[0], elem)
+				if elems[0] != elem {
+					t.Errorf("expected elem to be %d, got %d", elems[0], elem)
+				}
 			}()
 
 			wg.Wait()
@@ -139,18 +144,108 @@ func TestBlocking(t *testing.T) {
 
 	t.Run("Clear", func(t *testing.T) {
 		t.Parallel()
+
+		t.Run("Success", func(t *testing.T) {
+			t.Parallel()
+
+			elems := []int{1, 2, 3}
+
+			blockingQueue := queue.NewBlocking(elems)
+
+			queueElems := blockingQueue.Clear()
+
+			if !reflect.DeepEqual(elems, queueElems) {
+				t.Fatalf("expected elems to be %v, got %v", elems, queueElems)
+			}
+		})
+
+		t.Run("Empty", func(t *testing.T) {
+			t.Parallel()
+
+			blockingQueue := queue.NewBlocking([]int{})
+
+			queueElems := blockingQueue.Clear()
+
+			if len(queueElems) != 0 {
+				t.Fatalf("expected elems to be empty, got %v", queueElems)
+			}
+		})
 	})
 
 	t.Run("Contains", func(t *testing.T) {
 		t.Parallel()
+
+		t.Run("True", func(t *testing.T) {
+			t.Parallel()
+
+			elems := []int{1, 2, 3}
+
+			blockingQueue := queue.NewBlocking(elems)
+
+			if !blockingQueue.Contains(2) {
+				t.Fatalf("expected queue to contain 2")
+			}
+		})
+
+		t.Run("False", func(t *testing.T) {
+			t.Parallel()
+
+			elems := []int{1, 2, 3}
+
+			blockingQueue := queue.NewBlocking(elems)
+
+			if blockingQueue.Contains(4) {
+				t.Fatalf("expected queue to not contain 4")
+			}
+		})
 	})
 
 	t.Run("Iterator", func(t *testing.T) {
 		t.Parallel()
+
+		elems := []int{1, 2, 3}
+
+		blockingQueue := queue.NewBlocking(elems)
+
+		iterCh := blockingQueue.Iterator()
+
+		if !blockingQueue.IsEmpty() {
+			t.Fatalf("expected queue to be empty")
+		}
+
+		iterElems := make([]int, 0, len(elems))
+
+		for e := range iterCh {
+			iterElems = append(iterElems, e)
+		}
+
+		if !reflect.DeepEqual(elems, iterElems) {
+			t.Fatalf("expected elems to be %v, got %v", elems, iterElems)
+		}
 	})
 
 	t.Run("IsEmpty", func(t *testing.T) {
 		t.Parallel()
+
+		t.Run("True", func(t *testing.T) {
+			t.Parallel()
+
+			blockingQueue := queue.NewBlocking([]int{})
+
+			if !blockingQueue.IsEmpty() {
+				t.Fatalf("expected queue to be empty")
+			}
+		})
+
+		t.Run("False", func(t *testing.T) {
+			t.Parallel()
+
+			blockingQueue := queue.NewBlocking([]int{1})
+
+			if blockingQueue.IsEmpty() {
+				t.Fatalf("expected queue to not be empty")
+			}
+		})
 	})
 
 	t.Run("Reset", func(t *testing.T) {
@@ -159,31 +254,32 @@ func TestBlocking(t *testing.T) {
 		t.Run("WithCapacity", func(t *testing.T) {
 			t.Parallel()
 
-			i := is.New(t)
-
 			elems := []int{1, 2, 3}
+
+			initialSize := len(elems)
 
 			blockingQueue := queue.NewBlocking(
 				elems,
-				queue.WithCapacity(len(elems)+1),
+				queue.WithCapacity(initialSize+1),
 			)
 
-			i.Equal(3, blockingQueue.Size())
+			if blockingQueue.Size() != initialSize {
+				t.Fatalf("expected size to be %d, got %d", initialSize, blockingQueue.Size())
+			}
 
 			blockingQueue.OfferWait(4)
 
-			i.Equal(4, blockingQueue.Size())
+			if blockingQueue.Size() != initialSize+1 {
+				t.Fatalf("expected size to be %d, got %d", initialSize+1, blockingQueue.Size())
+			}
 
 			blockingQueue.Reset()
 
-			i.Equal(3, blockingQueue.Size())
-
-			size := blockingQueue.Size()
-
-			// empty the queue
-			for j := 0; j < size; j++ {
-				i.Equal(elems[j], blockingQueue.GetWait())
+			if blockingQueue.Size() != initialSize {
+				t.Fatalf("expected size to be %d, got %d", initialSize, blockingQueue.Size())
 			}
+
+			_ = blockingQueue.Clear()
 
 			elem := make(chan int)
 
@@ -193,7 +289,9 @@ func TestBlocking(t *testing.T) {
 
 			blockingQueue.OfferWait(5)
 
-			i.Equal(5, <-elem)
+			if e := <-elem; e != 5 {
+				t.Fatalf("expected elem to be %d, got %d", 5, e)
+			}
 		})
 	})
 
@@ -201,15 +299,13 @@ func TestBlocking(t *testing.T) {
 		t.Parallel()
 
 		t.Run("NoCapacity", func(t *testing.T) {
-			i := is.New(t)
-
 			t.Parallel()
 
 			elems := []int{1, 2, 3}
 
 			blockingQueue := queue.NewBlocking(elems)
 
-			drainQueue[int](blockingQueue)
+			_ = blockingQueue.Clear()
 
 			elem := make(chan int)
 
@@ -219,13 +315,13 @@ func TestBlocking(t *testing.T) {
 
 			blockingQueue.OfferWait(4)
 
-			i.Equal(4, <-elem)
+			if e := <-elem; e != 4 {
+				t.Fatalf("expected elem to be %d, got %d", 4, e)
+			}
 		})
 
 		t.Run("WithCapacity", func(t *testing.T) {
 			t.Parallel()
-
-			i := is.New(t)
 
 			elems := []int{1, 2, 3}
 
@@ -252,7 +348,9 @@ func TestBlocking(t *testing.T) {
 				blockingQueue.GetWait()
 			}
 
-			i.Equal(4, blockingQueue.GetWait())
+			if e := blockingQueue.GetWait(); e != 4 {
+				t.Fatalf("expected elem to be %d, got %d", 4, e)
+			}
 		})
 	})
 
@@ -262,13 +360,11 @@ func TestBlocking(t *testing.T) {
 		t.Run("NoCapacity", func(t *testing.T) {
 			t.Parallel()
 
-			i := is.New(t)
-
 			elems := []int{1, 2, 3}
 
 			blockingQueue := queue.NewBlocking[int](elems)
 
-			drainQueue[int](blockingQueue)
+			_ = blockingQueue.Clear()
 
 			elem := make(chan int)
 
@@ -276,18 +372,19 @@ func TestBlocking(t *testing.T) {
 				elem <- blockingQueue.GetWait()
 			}()
 
-			err := blockingQueue.Offer(4)
-			i.NoErr(err)
+			if err := blockingQueue.Offer(4); err != nil {
+				t.Fatalf("expected no error, got %v", err)
+			}
 
-			i.Equal(4, <-elem)
+			if e := <-elem; e != 4 {
+				t.Fatalf("expected elem to be %d, got %d", 4, e)
+			}
 		})
 
 		t.Run("WithCapacity", func(t *testing.T) {
 			t.Run("Success", func(t *testing.T) {
 				t.Parallel()
 
-				i := is.New(t)
-
 				elems := []int{1, 2, 3}
 
 				blockingQueue := queue.NewBlocking(
@@ -295,20 +392,22 @@ func TestBlocking(t *testing.T) {
 					queue.WithCapacity(len(elems)),
 				)
 
-				_, err := blockingQueue.Get()
-				i.NoErr(err)
+				if _, err := blockingQueue.Get(); err != nil {
+					t.Fatalf("expected no error, got %v", err)
+				}
 
-				err = blockingQueue.Offer(4)
-				i.NoErr(err)
+				if err := blockingQueue.Offer(4); err != nil {
+					t.Fatalf("expected no error, got %v", err)
+				}
 
-				i.Equal(2, blockingQueue.GetWait())
+				if e := blockingQueue.GetWait(); e != 2 {
+					t.Fatalf("expected elem to be %d, got %d", 2, e)
+				}
 			})
 
 			t.Run("ErrQueueIsFull", func(t *testing.T) {
 				t.Parallel()
 
-				i := is.New(t)
-
 				elems := []int{1, 2, 3}
 
 				blockingQueue := queue.NewBlocking(
@@ -316,8 +415,9 @@ func TestBlocking(t *testing.T) {
 					queue.WithCapacity(len(elems)),
 				)
 
-				err := blockingQueue.Offer(4)
-				i.Equal(queue.ErrQueueIsFull, err)
+				if err := blockingQueue.Offer(4); !errors.Is(err, queue.ErrQueueIsFull) {
+					t.Fatalf("expected error to be %v, got %v", queue.ErrQueueIsFull, err)
+				}
 			})
 		})
 	})
@@ -328,40 +428,39 @@ func TestBlocking(t *testing.T) {
 		t.Run("Success", func(t *testing.T) {
 			t.Parallel()
 
-			i := is.New(t)
-
 			elems := []int{1, 2, 3}
 
 			blockingQueue := queue.NewBlocking(elems)
 
 			elem, err := blockingQueue.Peek()
-			i.NoErr(err)
+			if err != nil {
+				t.Fatalf("expected no error, got %v", err)
+			}
 
-			i.Equal(1, elem)
+			if elem != 1 {
+				t.Fatalf("expected elem to be %d, got %d", 1, elem)
+			}
 		})
 
 		t.Run("ErrNoElementsAvailable", func(t *testing.T) {
 			t.Parallel()
 
-			i := is.New(t)
-
 			blockingQueue := queue.NewBlocking([]int{})
 
-			_, err := blockingQueue.Peek()
-			i.Equal(queue.ErrNoElementsAvailable, err)
+			if _, err := blockingQueue.Peek(); !errors.Is(err, queue.ErrNoElementsAvailable) {
+				t.Fatalf("expected error to be %v, got %v", queue.ErrNoElementsAvailable, err)
+			}
 		})
 	})
 
 	t.Run("PeekWait", func(t *testing.T) {
 		t.Parallel()
 
-		i := is.New(t)
-
 		elems := []int{1, 2, 3}
 
 		blockingQueue := queue.NewBlocking(elems)
 
-		drainQueue[int](blockingQueue)
+		_ = blockingQueue.Clear()
 
 		elem := make(chan int)
 
@@ -373,14 +472,17 @@ func TestBlocking(t *testing.T) {
 
 		blockingQueue.OfferWait(4)
 
-		i.Equal(4, <-elem)
-		i.Equal(4, blockingQueue.GetWait())
+		if e := <-elem; e != 4 {
+			t.Fatalf("expected elem to be %d, got %d", 4, e)
+		}
+
+		if e := blockingQueue.GetWait(); e != 4 {
+			t.Fatalf("expected elem to be %d, got %d", 4, e)
+		}
 	})
 
 	t.Run("Get", func(t *testing.T) {
 		t.Parallel()
-
-		i := is.New(t)
 
 		elems := []int{1, 2, 3}
 
@@ -393,8 +495,9 @@ func TestBlocking(t *testing.T) {
 				blockingQueue.GetWait()
 			}
 
-			_, err := blockingQueue.Get()
-			i.Equal(queue.ErrNoElementsAvailable, err)
+			if _, err := blockingQueue.Get(); !errors.Is(err, queue.ErrNoElementsAvailable) {
+				t.Fatalf("expected error to be %v, got %v", queue.ErrNoElementsAvailable, err)
+			}
 		})
 
 		t.Run("Success", func(t *testing.T) {
@@ -403,26 +506,35 @@ func TestBlocking(t *testing.T) {
 			blockingQueue := queue.NewBlocking(elems)
 
 			elem, err := blockingQueue.Get()
-			i.NoErr(err)
+			if err != nil {
+				t.Fatalf("expected no error, got %v", err)
+			}
 
-			i.Equal(1, elem)
+			if elem != 1 {
+				t.Fatalf("expected elem to be %d, got %d", 1, elem)
+			}
 		})
 	})
 
 	t.Run("WithCapacity", func(t *testing.T) {
 		t.Parallel()
 
-		i := is.New(t)
-
 		elems := []int{1, 2, 3}
 		capacity := 2
 
 		blocking := queue.NewBlocking(elems, queue.WithCapacity(capacity))
 
-		i.Equal(2, blocking.Size())
+		if blocking.Size() != capacity {
+			t.Fatalf("expected size to be %d, got %d", capacity, blocking.Size())
+		}
 
-		i.Equal(1, blocking.GetWait())
-		i.Equal(2, blocking.GetWait())
+		if e := blocking.GetWait(); e != 1 {
+			t.Fatalf("expected elem to be %d, got %d", 1, e)
+		}
+
+		if e := blocking.GetWait(); e != 2 {
+			t.Fatalf("expected elem to be %d, got %d", 2, e)
+		}
 
 		elem := make(chan int)
 
@@ -438,7 +550,9 @@ func TestBlocking(t *testing.T) {
 
 		blocking.OfferWait(4)
 
-		i.Equal(4, <-elem)
+		if e := <-elem; e != 4 {
+			t.Fatalf("expected elem to be %d, got %d", 4, e)
+		}
 	})
 }
 
