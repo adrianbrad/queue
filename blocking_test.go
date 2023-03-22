@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/adrianbrad/queue"
+	"github.com/adrianbrad/queue/v2"
 )
 
 func TestBlocking(t *testing.T) {

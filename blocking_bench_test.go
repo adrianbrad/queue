@@ -3,7 +3,7 @@ package queue_test
 import (
 	"testing"
 
-	"github.com/adrianbrad/queue"
+	"github.com/adrianbrad/queue/v2"
 )
 
 func BenchmarkBlockingQueue(b *testing.B) {

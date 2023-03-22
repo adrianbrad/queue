@@ -1,10 +1,10 @@
 # queue ![GitHub release](https://img.shields.io/github/v/tag/adrianbrad/queue)
 
 [![GitHub go.mod Go version of a Go module](https://img.shields.io/github/go-mod/go-version/adrianbrad/queue)](https://github.com/adrianbrad/queue)
-[![GoDoc reference example](https://img.shields.io/badge/godoc-reference-blue.svg)](https://pkg.go.dev/github.com/adrianbrad/queue)
+[![GoDoc reference example](https://img.shields.io/badge/godoc-reference-blue.svg)](https://pkg.go.dev/github.com/adrianbrad/queue/v2)
 
 [![CodeFactor](https://www.codefactor.io/repository/github/adrianbrad/queue/badge)](https://www.codefactor.io/repository/github/adrianbrad/queue)
-[![Go Report Card](https://goreportcard.com/badge/github.com/adrianbrad/queue)](https://goreportcard.com/report/github.com/adrianbrad/queue)
+[![Go Report Card](https://goreportcard.com/badge/github.com/adrianbrad/queue/v2)](https://goreportcard.com/report/github.com/adrianbrad/queue/v2)
 [![codecov](https://codecov.io/gh/adrianbrad/queue/branch/main/graph/badge.svg)](https://codecov.io/gh/adrianbrad/queue)
 
 [![lint-test](https://github.com/adrianbrad/queue/actions/workflows/lint-test.yaml/badge.svg)](https://github.com/adrianbrad/queue/actions?query=workflow%3Alint-test)
@@ -35,14 +35,14 @@ The queue package provides two types of queues:
 To add this package as a dependency to your project, run:
 
 ```shell
-go get -u github.com/adrianbrad/queue
+go get -u github.com/adrianbrad/queue/v2
 ```
 
 ### Import
 To use this package in your project, you can import it as follows:
 
 ```go
-import "github.com/adrianbrad/queue"
+import "github.com/adrianbrad/queue/v2"
 ```
 
 ### Usage
@@ -74,7 +74,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/adrianbrad/queue"
+	"github.com/adrianbrad/queue/v2"
 )
 
 func main() {
@@ -112,7 +112,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/adrianbrad/queue"
+	"github.com/adrianbrad/queue/v2"
 )
 
 func main() {

@@ -6,7 +6,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/adrianbrad/queue"
+	"github.com/adrianbrad/queue/v2"
 )
 
 func TestPriority(t *testing.T) {
