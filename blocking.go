@@ -10,7 +10,7 @@ var _ Queue[any] = (*Blocking[any])(nil)
 // that wait for the queue to have available items, and wait for a slot to
 // become available in case the queue is full.
 // ! The Blocking Queue shares most functionality with channels. If you do
-// not make use of Peek or Reset methods you are safe to use channels instead.
+// not make use of Peek, Reset and Contains methods you are safe to use channels instead.
 //
 // It supports operations for retrieving and adding elements to a FIFO queue.
 // If there are no elements available the retrieve operations wait until

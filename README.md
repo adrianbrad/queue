@@ -34,7 +34,7 @@ The queue package provides two types of queues:
 ### Installation
 To add this package as a dependency to your project, run:
 
-```
+```shell
 go get -u github.com/adrianbrad/queue
 ```
 
@@ -149,7 +149,7 @@ func main() {
 
 Results as of 3rd of February 2023.
 
-```
+```text
 BenchmarkBlockingQueue/Peek-12          63275360                19.44 ns/op            0 B/op          0 allocs/op
 BenchmarkBlockingQueue/Get_Offer-12     19066974                69.67 ns/op           40 B/op          0 allocs/op
 BenchmarkBlockingQueue/Offer-12         36569245                37.86 ns/op           41 B/op          0 allocs/op
