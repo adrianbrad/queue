@@ -15,6 +15,7 @@ type Queue[T comparable] interface {
 	// Reset sets the queue to its initial state.
 	Reset()
 
+	// Contains returns true if the queue contains the element.
 	Contains(T) bool
 
 	// Peek retrieves but does not remove the head of the queue.

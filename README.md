@@ -80,18 +80,27 @@ import (
 func main() {
 	elems := []int{2, 3}
 
-	priorityQueue := queue.NewBlocking(elems, queue.WithCapacity(3))
+	blockingQueue := queue.NewBlocking(elems, queue.WithCapacity(3))
 
-	if err := priorityQueue.Offer(1); err != nil {
+	containsTwo := blockingQueue.Contains(2)
+	fmt.Println(containsTwo) // true
+
+	size := blockingQueue.Size()
+	fmt.Println(size) // 2
+
+	empty := blockingQueue.IsEmpty()
+	fmt.Println(empty) // false
+
+	if err := blockingQueue.Offer(1); err != nil {
 		// handle err
 	}
 
-	elem, err := priorityQueue.Get()
+	elem, err := blockingQueue.Get()
 	if err != nil {
 		// handle err
 	}
 
-	fmt.Printf("elem: %d\n", elem) // elem: 2
+	fmt.Println("elem: ", elem) // elem: 2
 }
 ```
 
@@ -113,6 +122,15 @@ func main() {
 		elems, 
 		func(elem, otherElem int) bool { return elem < otherElem },
     )
+
+	containsTwo := priorityQueue.Contains(2)
+	fmt.Println(containsTwo) // true
+
+	size := priorityQueue.Size()
+	fmt.Println(size) // 3
+
+	empty := priorityQueue.IsEmpty()
+	fmt.Println(empty) // false
 
 	if err := priorityQueue.Offer(1); err != nil {
 		// handle err
