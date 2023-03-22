@@ -1,3 +1,9 @@
+## v2.0.1 (2023-03-23)
+
+### Fix
+
+- **go.mod**: gix module path to match the major version
+
 ## v2.0.0 (2023-03-22)
 
 ### BREAKING CHANGE
