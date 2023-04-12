@@ -18,7 +18,7 @@ func ExamplePriority() {
 	)
 
 	containsTwo := priorityQueue.Contains(2)
-	fmt.Println("Contains 3:", containsTwo)
+	fmt.Println("Contains 2:", containsTwo)
 
 	size := priorityQueue.Size()
 	fmt.Println("Size:", size)
@@ -51,7 +51,7 @@ func ExamplePriority() {
 	fmt.Println("Get:", elem)
 
 	// Output:
-	// Contains 3: true
+	// Contains 2: true
 	// Size: 3
 	// Empty before clear: false
 	// Clear: [1 2 3 4]

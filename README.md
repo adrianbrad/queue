@@ -31,6 +31,8 @@ The queue package provides two types of queues:
 
 - Priority Queue: Order based on the less function provided at construction. Implemented using container/heap standard library package.
 
+- Circular Queue: FIFO Ordering, implemented using a fixed size slice. When the queue is full, adding a new element to the queue overwrites the oldest element.
+
 ### Installation
 To add this package as a dependency to your project, run:
 
@@ -145,15 +147,56 @@ func main() {
 }
 ```
 
+##### Circular Queue
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/adrianbrad/queue"
+)
+
+func main() {
+	elems := []int{2, 3, 4}
+
+	priorityQueue := queue.NewCircular(elems, 3)
+
+	containsTwo := priorityQueue.Contains(2)
+	fmt.Println(containsTwo) // true
+
+	size := priorityQueue.Size()
+	fmt.Println(size) // 3
+
+	empty := priorityQueue.IsEmpty()
+	fmt.Println(empty) // false
+
+	if err := priorityQueue.Offer(1); err != nil {
+		// handle err
+	}
+
+	elem, err := priorityQueue.Get()
+	if err != nil {
+		// handle err
+	}
+
+	fmt.Printf("elem: %d\n", elem) // elem: 1
+}
+```
+
 ## Benchmarks 
 
-Results as of 3rd of February 2023.
+Results as of April 2023.
 
 ```text
-BenchmarkBlockingQueue/Peek-12          63275360                19.44 ns/op            0 B/op          0 allocs/op
-BenchmarkBlockingQueue/Get_Offer-12     19066974                69.67 ns/op           40 B/op          0 allocs/op
-BenchmarkBlockingQueue/Offer-12         36569245                37.86 ns/op           41 B/op          0 allocs/op
-BenchmarkPriorityQueue/Peek-12          66765319                15.86 ns/op            0 B/op          0 allocs/op
-BenchmarkPriorityQueue/Get_Offer-12     16677442                71.33 ns/op            0 B/op          0 allocs/op
-BenchmarkPriorityQueue/Offer-12         20044909                58.58 ns/op           55 B/op          0 allocs/op
+BenchmarkBlockingQueue/Peek-12          72900492                18.92 ns/op            0 B/op          0 allocs/op
+BenchmarkBlockingQueue/Get_Offer-12     14937858                95.08 ns/op           41 B/op          0 allocs/op
+BenchmarkBlockingQueue/Offer-12         26680512                51.81 ns/op           45 B/op          0 allocs/op
+BenchmarkCircularQueue/Peek-12          73749498                16.24 ns/op            0 B/op          0 allocs/op
+BenchmarkCircularQueue/Get_Offer-12     18768650                63.02 ns/op            0 B/op          0 allocs/op
+BenchmarkCircularQueue/Offer-12         38328231                37.57 ns/op            0 B/op          0 allocs/op
+BenchmarkPriorityQueue/Peek-12          75156879                15.79 ns/op            0 B/op          0 allocs/op
+BenchmarkPriorityQueue/Get_Offer-12     17643837                68.65 ns/op            0 B/op          0 allocs/op
+BenchmarkPriorityQueue/Offer-12         20506784                57.43 ns/op           54 B/op          0 allocs/op
 ```
