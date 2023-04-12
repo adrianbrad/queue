@@ -56,9 +56,8 @@ func (h *priorityHeap[T]) Pop() any {
 var _ Queue[any] = (*Priority[any])(nil)
 
 // Priority is a Queue implementation.
-// ! The elements must implement the Lesser interface.
 //
-// The ordering is given by the Lesser.Less method implementation.
+// The ordering is given by the lessFunc.
 // The head of the queue is always the highest priority element.
 //
 // ! If capacity is provided and is less than the number of elements provided,
@@ -231,13 +230,16 @@ func (pq *Priority[T]) Iterator() <-chan T {
 
 // IsEmpty returns true if the queue is empty, false otherwise.
 func (pq *Priority[T]) IsEmpty() bool {
+	pq.lock.RLock()
+	defer pq.lock.RUnlock()
+
 	return pq.elements.Len() == 0
 }
 
 // Contains returns true if the queue contains the element, false otherwise.
 func (pq *Priority[T]) Contains(a T) bool {
-	pq.lock.Lock()
-	defer pq.lock.Unlock()
+	pq.lock.RLock()
+	defer pq.lock.RUnlock()
 
 	for i := range pq.elements.elems {
 		if pq.elements.elems[i] == a {

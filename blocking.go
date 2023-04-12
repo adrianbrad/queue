@@ -25,7 +25,7 @@ type Blocking[T comparable] struct {
 	capacity *int
 
 	// synchronization
-	lock         sync.Mutex
+	lock         sync.RWMutex
 	notEmptyCond *sync.Cond
 	notFullCond  *sync.Cond
 }
@@ -48,7 +48,7 @@ func NewBlocking[T comparable](
 		elementsIndex: 0,
 		initialLen:    len(elems),
 		capacity:      options.capacity,
-		lock:          sync.Mutex{},
+		lock:          sync.RWMutex{},
 	}
 
 	queue.notEmptyCond = sync.NewCond(&queue.lock)
@@ -163,8 +163,8 @@ func (bq *Blocking[T]) Clear() []T {
 // Iterator returns an iterator over the elements in the queue.
 // It removes the elements from the queue.
 func (bq *Blocking[T]) Iterator() <-chan T {
-	bq.lock.Lock()
-	defer bq.lock.Unlock()
+	bq.lock.RLock()
+	defer bq.lock.RUnlock()
 
 	// use a buffered channel to avoid blocking the iterator.
 	iteratorCh := make(chan T, bq.size())
@@ -190,8 +190,8 @@ func (bq *Blocking[T]) Iterator() <-chan T {
 // Peek retrieves but does not return the head of the queue.
 // If no element is available it returns an ErrNoElementsAvailable error.
 func (bq *Blocking[T]) Peek() (v T, _ error) {
-	bq.lock.Lock()
-	defer bq.lock.Unlock()
+	bq.lock.RLock()
+	defer bq.lock.RUnlock()
 
 	if bq.isEmpty() {
 		return v, ErrNoElementsAvailable
@@ -223,16 +223,16 @@ func (bq *Blocking[T]) PeekWait() T {
 
 // Size returns the number of elements in the queue.
 func (bq *Blocking[T]) Size() int {
-	bq.lock.Lock()
-	defer bq.lock.Unlock()
+	bq.lock.RLock()
+	defer bq.lock.RUnlock()
 
 	return bq.size()
 }
 
 // Contains returns true if the queue contains the given element.
 func (bq *Blocking[T]) Contains(elem T) bool {
-	bq.lock.Lock()
-	defer bq.lock.Unlock()
+	bq.lock.RLock()
+	defer bq.lock.RUnlock()
 
 	for i := range bq.elements[bq.elementsIndex:] {
 		if bq.elements[i] == elem {
@@ -245,8 +245,8 @@ func (bq *Blocking[T]) Contains(elem T) bool {
 
 // IsEmpty returns true if the queue is empty.
 func (bq *Blocking[T]) IsEmpty() bool {
-	bq.lock.Lock()
-	defer bq.lock.Unlock()
+	bq.lock.RLock()
+	defer bq.lock.RUnlock()
 
 	return bq.isEmpty()
 }
