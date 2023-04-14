@@ -1,3 +1,9 @@
+## v1.2.0 (2023-04-14)
+
+### Feat
+
+- implement `Circular Queue` and add tests
+
 ## v1.1.0 (2023-03-23)
 
 ### Feat
