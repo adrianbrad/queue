@@ -1,5 +1,6 @@
-# queue ![GitHub release](https://img.shields.io/github/v/tag/adrianbrad/queue)
+# queue
 
+![GitHub release](https://img.shields.io/github/v/tag/adrianbrad/queue)
 [![GitHub go.mod Go version of a Go module](https://img.shields.io/github/go-mod/go-version/adrianbrad/queue)](https://github.com/adrianbrad/queue)
 [![GoDoc reference example](https://img.shields.io/badge/godoc-reference-blue.svg)](https://pkg.go.dev/github.com/adrianbrad/queue)
 
@@ -13,8 +14,6 @@
 
 ---
 
-### Overview 
-
 The `queue` package provides thread-safe generic implementations in Go for the following data structures: `BlockingQueue`, `PriorityQueue` and `CircularQueue`.
 
 A queue is a sequence of entities that is open at both ends where the elements are
@@ -24,23 +23,35 @@ The implementations are designed to be easy-to-use and provide a consistent API,
 
 Benchmarks and Example tests can be found in this package. 
 
-### Installation
+<!-- TOC -->
+* [queue](#queue)
+  * [Installation](#installation)
+  * [Import](#import)
+  * [Usage](#usage)
+    * [Queue Interface](#queue-interface)
+    * [Blocking Queue](#blocking-queue)
+    * [Priority Queue](#priority-queue)
+    * [Circular Queue](#circular-queue)
+  * [Benchmarks](#benchmarks-)
+<!-- TOC -->
+
+## Installation
 To add this package as a dependency to your project, run:
 
 ```shell
 go get -u github.com/adrianbrad/queue
 ```
 
-### Import
+## Import
 To use this package in your project, you can import it as follows:
 
 ```go
 import "github.com/adrianbrad/queue"
 ```
 
-### Usage
+## Usage
 
-#### Queue Interface
+### Queue Interface
 
 ```go
 // Queue is a generic queue interface, defining the methods that all queues must implement.
@@ -56,7 +67,7 @@ type Queue[T comparable] interface {
 }
 ```
 
-#### Blocking Queue
+### Blocking Queue
 
 Blocking queue is a FIFO ordered data structure. Both blocking and non-blocking methods are implemented.
 Blocking methods wait for the queue to have available items when dequeuing, and wait for a slot to become available in case the queue is full when enqueuing.
@@ -99,7 +110,7 @@ func main() {
 }
 ```
 
-#### Priority Queue
+### Priority Queue
 
 Priority Queue is a data structure where the order of the elements is given by a comparator function provided at construction. 
 Implemented using container/heap standard library package.
@@ -143,7 +154,7 @@ func main() {
 }
 ```
 
-#### Circular Queue
+### Circular Queue
 
 Circular Queue is a fixed size FIFO ordered data structure. When the queue is full, adding a new element to the queue overwrites the oldest element.
 
@@ -191,7 +202,7 @@ func main() {
 }
 ```
 
-### Benchmarks 
+## Benchmarks 
 
 Results as of April 2023.
 
