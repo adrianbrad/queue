@@ -1,6 +1,9 @@
 package queue
 
-// Queue is a collection that orders elements in a FIFO order.
+// A Queue is an ordered sequence of items, the order is usually first in first out.
+// New items are added to the back of the queue and
+// existing items are removed from the front of the queue.
+//
 // This interface provides basic methods for adding and extracting elements
 // from the queue.
 // Items are extracted from the head of the queue and added to the tail

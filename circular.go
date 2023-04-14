@@ -10,6 +10,14 @@ var _ Queue[any] = (*Circular[any])(nil)
 // Circular is a Queue implementation.
 // A circular queue is a queue that uses a fixed-size slice as if it were connected end-to-end.
 // When the queue is full, adding a new element to the queue overwrites the oldest element.
+//
+// Example:
+// We have the following queue with a capacity of 3 elements: [1, 2, 3].
+// If the tail of the queue is set to 0, as if we just added the element `3`,
+// then the next element to be added to the queue will overwrite the element at index 0.
+// So, if we add the element `4`, the queue will look like this: [4, 2, 3].
+// If the head of the queue is set to 0, as if we never removed an element yet,
+// then the next element to be removed from the queue will be the element at index 0, which is `4`.
 type Circular[T comparable] struct {
 	initialElements []T
 	elems           []T
@@ -206,7 +214,7 @@ func (q *Circular[T]) Size() int {
 
 // ===================================Helpers==================================
 
-// Get returns the element at the head of the queue.
+// get returns the element at the head of the queue.
 func (q *Circular[T]) get() (v T, _ error) {
 	if q.isEmpty() {
 		return v, ErrNoElementsAvailable
@@ -219,6 +227,7 @@ func (q *Circular[T]) get() (v T, _ error) {
 	return item, nil
 }
 
+// isEmpty returns true if the queue is empty.
 func (q *Circular[T]) isEmpty() bool {
 	return q.size == 0
 }
