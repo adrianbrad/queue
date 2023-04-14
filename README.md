@@ -15,23 +15,14 @@
 
 ### Overview 
 
-The queue package provides multiple thread-safe generic queue implementations in Go.
+The `queue` package provides thread-safe generic implementations in Go for the following data structures: `BlockingQueue`, `PriorityQueue` and `CircularQueue`.
 
 A queue is a sequence of entities that is open at both ends where the elements are
 added (enqueued) to the tail (back) of the queue and removed (dequeued) from the head (front) of the queue.
 
-Queues implemented in this package are designed to be easy to use and provide a consistent API.
+The implementations are designed to be easy-to-use and provide a consistent API, satisfying the `Queue` interface provided by this package. .
 
-Benchmarks and Example tests can be found in this package.
-
-### Features
-The queue package provides two types of queues:
-
-- Blocking Queue: FIFO Ordering, provides blocking and non-blocking methods. The non-blocking methods return an error. Implemented using sync.Cond from the standard library.
-
-- Priority Queue: Order based on the less function provided at construction. Implemented using container/heap standard library package.
-
-- Circular Queue: FIFO Ordering, implemented using a fixed size slice. When the queue is full, adding a new element to the queue overwrites the oldest element.
+Benchmarks and Example tests can be found in this package. 
 
 ### Installation
 To add this package as a dependency to your project, run:
@@ -49,7 +40,6 @@ import "github.com/adrianbrad/queue"
 
 ### Usage
 
-
 #### Queue Interface
 
 ```go
@@ -66,9 +56,12 @@ type Queue[T comparable] interface {
 }
 ```
 
-#### Quick Start
+#### Blocking Queue
 
-##### Blocking Queue
+Blocking queue is a FIFO ordered data structure. Both blocking and non-blocking methods are implemented.
+Blocking methods wait for the queue to have available items when dequeuing, and wait for a slot to become available in case the queue is full when enqueuing.
+The non-blocking methods return an error if an element cannot be added or removed. 
+Implemented using sync.Cond from the standard library.
 
 ```go
 package main
@@ -106,7 +99,10 @@ func main() {
 }
 ```
 
-##### Priority Queue
+#### Priority Queue
+
+Priority Queue is a data structure where the order of the elements is given by a comparator function provided at construction. 
+Implemented using container/heap standard library package.
 
 ```go
 package main
@@ -123,7 +119,7 @@ func main() {
 	priorityQueue := queue.NewPriority(
 		elems, 
 		func(elem, otherElem int) bool { return elem < otherElem },
-    )
+        )
 
 	containsTwo := priorityQueue.Contains(2)
 	fmt.Println(containsTwo) // true
@@ -147,7 +143,17 @@ func main() {
 }
 ```
 
-##### Circular Queue
+#### Circular Queue
+
+Circular Queue is a fixed size FIFO ordered data structure. When the queue is full, adding a new element to the queue overwrites the oldest element.
+
+Example:
+We have the following queue with a capacity of 3 elements: [1, 2, 3].
+If the tail of the queue is set to 0, as if we just added the element `3`,
+the next element to be added to the queue will overwrite the element at index 0.
+So, if we add the element `4`, the queue will look like this: [4, 2, 3].
+If the head of the queue is set to 0, as if we never removed an element yet,
+then the next element to be removed from the queue will be the element at index 0, which is `4`.
 
 ```go
 package main
@@ -185,7 +191,7 @@ func main() {
 }
 ```
 
-## Benchmarks 
+### Benchmarks 
 
 Results as of April 2023.
 
