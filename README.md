@@ -170,35 +170,35 @@ then the next element to be removed from the queue will be the element at index 
 package main
 
 import (
-	"fmt"
+  "fmt"
 
-	"github.com/adrianbrad/queue"
+  "github.com/adrianbrad/queue"
 )
 
 func main() {
-	elems := []int{2, 3, 4}
+  elems := []int{2, 3, 4}
 
-	priorityQueue := queue.NewCircular(elems, 3)
+  circularQueue := queue.NewCircular(elems, 3)
 
-	containsTwo := priorityQueue.Contains(2)
-	fmt.Println(containsTwo) // true
+  containsTwo := circularQueue.Contains(2)
+  fmt.Println(containsTwo) // true
 
-	size := priorityQueue.Size()
-	fmt.Println(size) // 3
+  size := circularQueue.Size()
+  fmt.Println(size) // 3
 
-	empty := priorityQueue.IsEmpty()
-	fmt.Println(empty) // false
+  empty := circularQueue.IsEmpty()
+  fmt.Println(empty) // false
 
-	if err := priorityQueue.Offer(1); err != nil {
-		// handle err
-	}
+  if err := circularQueue.Offer(1); err != nil {
+    // handle err
+  }
 
-	elem, err := priorityQueue.Get()
-	if err != nil {
-		// handle err
-	}
+  elem, err := circularQueue.Get()
+  if err != nil {
+    // handle err
+  }
 
-	fmt.Printf("elem: %d\n", elem) // elem: 1
+  fmt.Printf("elem: %d\n", elem) // elem: 1
 }
 ```
 
