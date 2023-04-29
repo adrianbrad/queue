@@ -56,13 +56,31 @@ import "github.com/adrianbrad/queue"
 ```go
 // Queue is a generic queue interface, defining the methods that all queues must implement.
 type Queue[T comparable] interface {
+	// Get retrieves and removes the head of the queue.
 	Get() (T, error)
+
+	// Offer inserts the element to the tail of the queue.
 	Offer(T) error
+
+	// Reset sets the queue to its initial state.
 	Reset()
+
+	// Contains returns true if the queue contains the element.
+	Contains(T) bool
+
+	// Peek retrieves but does not remove the head of the queue.
 	Peek() (T, error)
+
+	// Size returns the number of elements in the queue.
 	Size() int
+
+	// IsEmpty returns true if the queue is empty.
 	IsEmpty() bool
+
+	// Iterator returns a channel that will be filled with the elements
 	Iterator() <-chan T
+
+	// Clear removes all elements from the queue.
 	Clear() []T
 }
 ```
