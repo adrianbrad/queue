@@ -71,7 +71,7 @@ func (bq *Blocking[T]) OfferWait(elem T) {
 	bq.lock.Lock()
 	defer bq.lock.Unlock()
 
-	if bq.isFull() {
+	for bq.isFull() {
 		bq.notFullCond.Wait()
 	}
 
@@ -209,7 +209,7 @@ func (bq *Blocking[T]) PeekWait() T {
 	bq.lock.Lock()
 	defer bq.lock.Unlock()
 
-	if bq.isEmpty() {
+	for bq.isEmpty() {
 		bq.notEmptyCond.Wait()
 	}
 
