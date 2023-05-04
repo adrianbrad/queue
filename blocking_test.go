@@ -554,6 +554,149 @@ func TestBlocking(t *testing.T) {
 			t.Fatalf("expected elem to be %d, got %d", 4, e)
 		}
 	})
+
+	t.Run("CondWaitWithCapacity", func(t *testing.T) {
+		t.Parallel()
+
+		t.Run("OfferWait", func(t *testing.T) {
+			t.Parallel()
+
+			elems := []int{1, 2, 3}
+			initialSize := len(elems)
+
+			blockingQueue := queue.NewBlocking(
+				elems,
+				queue.WithCapacity(initialSize),
+			)
+
+			added := make(chan struct{}, initialSize+1)
+			for i := 1; i <= initialSize+1; i++ {
+				go func(i int) {
+					blockingQueue.OfferWait(i)
+					added <- struct{}{}
+				}(i)
+			}
+
+			time.Sleep(time.Millisecond)
+			_ = blockingQueue.Clear()
+
+			// one groutine block, and three are added
+			for i := 1; i <= initialSize; i++ {
+				<-added
+			}
+
+			time.Sleep(time.Millisecond)
+			if blockingQueue.Size() != initialSize {
+				t.Fatalf("expected size to be %d, got %d", initialSize, blockingQueue.Size())
+			}
+
+			_ = blockingQueue.GetWait()
+			time.Sleep(time.Millisecond)
+			if blockingQueue.Size() != initialSize {
+				t.Fatalf("expected size to be %d, got %d", initialSize, blockingQueue.Size())
+			}
+		})
+
+		t.Run("GetWait", func(t *testing.T) {
+			t.Parallel()
+
+			elems := []int{1, 2, 3}
+			initialSize := len(elems)
+
+			blockingQueue := queue.NewBlocking(
+				elems,
+				queue.WithCapacity(initialSize),
+			)
+
+			for i := 1; i <= initialSize; i++ {
+				_ = blockingQueue.GetWait()
+			}
+
+			if blockingQueue.Size() != 0 {
+				t.Fatalf("expected size to be %d, got %d", 0, blockingQueue.Size())
+			}
+
+			retrievedElem := make(chan int, initialSize+1)
+			for i := 1; i <= initialSize+1; i++ {
+				go func() {
+					retrievedElem <- blockingQueue.GetWait()
+				}()
+			}
+
+			time.Sleep(time.Millisecond)
+			blockingQueue.Reset()
+
+			// one groutine block, and three are retrieved
+			for i := 1; i <= initialSize; i++ {
+				<-retrievedElem
+			}
+
+			if blockingQueue.Size() != 0 {
+				t.Fatalf("expected size to be %d, got %d", initialSize, blockingQueue.Size())
+			}
+
+			blockingQueue.OfferWait(4)
+			if e := <-retrievedElem; e != 4 {
+				t.Fatalf("expected elem to be %d, got %d", 4, e)
+			}
+		})
+
+		t.Run("PeekWait", func(t *testing.T) {
+			t.Parallel()
+
+			elems := []int{1}
+			initialSize := len(elems)
+
+			blockingQueue := queue.NewBlocking(
+				elems,
+				queue.WithCapacity(initialSize),
+			)
+
+			for i := 1; i <= initialSize; i++ {
+				_ = blockingQueue.GetWait()
+			}
+
+			if blockingQueue.Size() != 0 {
+				t.Fatalf("expected size to be %d, got %d", 0, blockingQueue.Size())
+			}
+
+			getCh := make(chan int, 1)
+			go func() {
+				getCh <- blockingQueue.GetWait()
+			}()
+
+			peekCh := make(chan int, 1)
+			go func() {
+				peekCh <- blockingQueue.PeekWait()
+			}()
+
+			time.Sleep(time.Millisecond)
+			blockingQueue.Reset()
+			// If GetWait is called before PeekWait, PeekWait will block
+			// If PeekWait is called before GetWait, PeekWait will not block
+			select {
+			case <-getCh:
+				select {
+				case <-peekCh:
+				case <-time.After(time.Millisecond):
+					t.Logf("GetWait is called before PeekWait")
+				}
+			case <-peekCh:
+				select {
+				case <-getCh:
+					t.Logf("PeekWait is called before GetWait")
+				case <-time.After(time.Millisecond):
+					t.Fatalf("expected GetWait to not block")
+				}
+			case <-time.After(time.Millisecond):
+				t.Fatalf("expected GetWait or PeekWait not block")
+			}
+
+			if blockingQueue.Size() != 0 {
+				t.Fatalf("expected size to be %d, got %d", 0, blockingQueue.Size())
+			}
+		})
+	})
 }
 
 func testResetOnMultipleRoutinesFunc[T comparable](
