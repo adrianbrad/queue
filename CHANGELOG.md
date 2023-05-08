@@ -1,5 +1,7 @@
 ## v1.2.1 (2023-05-08)
 
+- fix a bug caused by not calling the (*sync.Cond).Wait() method in a loop
+
 ## v1.2.0 (2023-04-14)
 
 ### Feat
