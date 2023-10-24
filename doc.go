@@ -12,4 +12,9 @@
 // A circular queue, which is a queue that uses a fixed-size slice as
 // if it were connected end-to-end. When the queue is full, adding a new element to the queue
 // overwrites the oldest element.
+//
+// A linked queue, implemented as a singly linked list, offering O(1)
+// time complexity for enqueue and dequeue operations. The queue maintains pointers
+// to both the head (front) and tail (end) of the list for efficient operations
+// without the need for traversal.
 package queue

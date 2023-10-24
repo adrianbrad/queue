@@ -33,6 +33,7 @@ Benchmarks and Example tests can be found in this package.
     * [Blocking Queue](#blocking-queue)
     * [Priority Queue](#priority-queue)
     * [Circular Queue](#circular-queue)
+    * [Linked Queue](#linked-queue)
   * [Benchmarks](#benchmarks-)
 <!-- TOC -->
 
@@ -221,18 +222,64 @@ func main() {
 }
 ```
 
+### Linked Queue
+
+A linked queue, implemented as a singly linked list, offering O(1)
+time complexity for enqueue and dequeue operations. The queue maintains pointers
+to both the head (front) and tail (end) of the list for efficient operations
+without the need for traversal.
+
+```go
+package main
+
+import (
+  "fmt"
+
+  "github.com/adrianbrad/queue"
+)
+
+func main() {
+  elems := []int{2, 3, 4}
+
+  circularQueue := queue.NewLinked(elems)
+
+  containsTwo := circularQueue.Contains(2)
+  fmt.Println(containsTwo) // true
+
+  size := circularQueue.Size()
+  fmt.Println(size) // 3
+
+  empty := circularQueue.IsEmpty()
+  fmt.Println(empty) // false
+
+  if err := circularQueue.Offer(1); err != nil {
+    // handle err
+  }
+
+  elem, err := circularQueue.Get()
+  if err != nil {
+    // handle err
+  }
+
+  fmt.Printf("elem: %d\n", elem) // elem: 2
+}
+```
+
 ## Benchmarks 
 
-Results as of April 2023.
+Results as of October 2023.
 
 ```text
-BenchmarkBlockingQueue/Peek-12          72900492                18.92 ns/op            0 B/op          0 allocs/op
-BenchmarkBlockingQueue/Get_Offer-12     14937858                95.08 ns/op           41 B/op          0 allocs/op
-BenchmarkBlockingQueue/Offer-12         26680512                51.81 ns/op           45 B/op          0 allocs/op
-BenchmarkCircularQueue/Peek-12          73749498                16.24 ns/op            0 B/op          0 allocs/op
-BenchmarkCircularQueue/Get_Offer-12     18768650                63.02 ns/op            0 B/op          0 allocs/op
-BenchmarkCircularQueue/Offer-12         38328231                37.57 ns/op            0 B/op          0 allocs/op
-BenchmarkPriorityQueue/Peek-12          75156879                15.79 ns/op            0 B/op          0 allocs/op
-BenchmarkPriorityQueue/Get_Offer-12     17643837                68.65 ns/op            0 B/op          0 allocs/op
-BenchmarkPriorityQueue/Offer-12         20506784                57.43 ns/op           54 B/op          0 allocs/op
+BenchmarkBlockingQueue/Peek-8           84873882                13.98 ns/op            0 B/op          0 allocs/op
+BenchmarkBlockingQueue/Get_Offer-8      27135865                47.00 ns/op           44 B/op          0 allocs/op
+BenchmarkBlockingQueue/Offer-8          53750395                25.40 ns/op           43 B/op          0 allocs/op
+BenchmarkCircularQueue/Peek-8           86001980                13.76 ns/op            0 B/op          0 allocs/op
+BenchmarkCircularQueue/Get_Offer-8      32379159                36.83 ns/op            0 B/op          0 allocs/op
+BenchmarkCircularQueue/Offer-8          63956366                18.77 ns/op            0 B/op          0 allocs/op
+BenchmarkLinkedQueue/Peek-8             1000000000              0.4179 ns/op           0 B/op          0 allocs/op
+BenchmarkLinkedQueue/Get_Offer-8        61257436                18.48 ns/op           16 B/op          1 allocs/op
+BenchmarkLinkedQueue/Offer-8            38975062                30.74 ns/op           16 B/op          1 allocs/op
+BenchmarkPriorityQueue/Peek-8           86633734                14.02 ns/op            0 B/op          0 allocs/op
+BenchmarkPriorityQueue/Get_Offer-8      29347177                39.88 ns/op            0 B/op          0 allocs/op
+BenchmarkPriorityQueue/Offer-8          40117958                31.37 ns/op           54 B/op          0 allocs/op
 ```

@@ -177,7 +177,7 @@ func (pq *Priority[T]) Get() (elem T, _ error) {
 		return elem, ErrNoElementsAvailable
 	}
 
-	// nolint: forcetypeassert // since the heap package does not yet support
+	// nolint: forcetypeassert, revive // since the heap package does not yet support
 	// generic types it has to use the `any` type. In this case, by design,
 	// type of the items available in the pq.elements collection is always T.
 	return heap.Pop(pq.elements).(T), nil
@@ -193,7 +193,7 @@ func (pq *Priority[T]) Clear() []T {
 	elems := make([]T, elemsLen)
 
 	for i := 0; i < elemsLen; i++ {
-		// nolint: forcetypeassert // since priorityHeap is unexported, this
+		// nolint: forcetypeassert, revive // since priorityHeap is unexported, this
 		// method cannot be directly called by a library client, it is only called
 		// by the heap package functions. Thus, it is safe to expect that the
 		// input parameter `elem` type is always T.
@@ -214,7 +214,7 @@ func (pq *Priority[T]) Iterator() <-chan T {
 
 	// iterate over the elements and send them to the channel.
 	for pq.elements.Len() > 0 {
-		// nolint: forcetypeassert // since priorityHeap is unexported, this
+		// nolint: forcetypeassert, revive // since priorityHeap is unexported, this
 		// method cannot be directly called by a library client, it is only called
 		// by the heap package functions. Thus, it is safe to expect that the
 		// input parameter `elem` type is always T.
