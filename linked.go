@@ -1,5 +1,9 @@
 package queue
 
+import (
+	"sync"
+)
+
 var _ Queue[any] = (*Linked[any])(nil)
 
 // node is an individual element of the linked list.
@@ -10,13 +14,14 @@ type node[T any] struct {
 
 // Linked represents a data structure representing a queue that uses a
 // linked list for its internal storage.
-// ! The Linked Queue is not thread safe.
 type Linked[T comparable] struct {
 	head *node[T] // first node of the queue.
 	tail *node[T] // last node of the queue.
 	size int      // number of elements in the queue.
 	// nolint: revive
 	initialElements []T // initial elements with which the queue was created, allowing for a reset to its original state if needed.
+	// synchronization
+	lock sync.RWMutex
 }
 
 // NewLinked creates a new Linked containing the given elements.
@@ -31,59 +36,76 @@ func NewLinked[T comparable](elements []T) *Linked[T] {
 	copy(queue.initialElements, elements)
 
 	for _, element := range elements {
-		_ = queue.Offer(element)
+		_ = queue.offer(element)
 	}
 
 	return queue
 }
 
 // Get retrieves and removes the head of the queue.
-func (q *Linked[T]) Get() (elem T, _ error) {
-	if q.IsEmpty() {
+func (lq *Linked[T]) Get() (elem T, _ error) {
+	lq.lock.Lock()
+	defer lq.lock.Unlock()
+
+	if lq.isEmpty() {
 		return elem, ErrNoElementsAvailable
 	}
 
-	value := q.head.value
-	q.head = q.head.next
-	q.size--
+	value := lq.head.value
+	lq.head = lq.head.next
+	lq.size--
 
-	if q.IsEmpty() {
-		q.tail = nil
+	if lq.isEmpty() {
+		lq.tail = nil
 	}
 
 	return value, nil
 }
 
 // Offer inserts the element into the queue.
-func (q *Linked[T]) Offer(value T) error {
+func (lq *Linked[T]) Offer(value T) error {
+	lq.lock.Lock()
+	defer lq.lock.Unlock()
+
+	return lq.offer(value)
+}
+
+// offer inserts the element into the queue.
+func (lq *Linked[T]) offer(value T) error {
 	newNode := &node[T]{value: value}
 
-	if q.IsEmpty() {
-		q.head = newNode
+	if lq.isEmpty() {
+		lq.head = newNode
 	} else {
-		q.tail.next = newNode
+		lq.tail.next = newNode
 	}
 
-	q.tail = newNode
-	q.size++
+	lq.tail = newNode
+	lq.size++
 
 	return nil
 }
 
 // Reset sets the queue to its initial state.
-func (q *Linked[T]) Reset() {
-	q.head = nil
-	q.tail = nil
-	q.size = 0
+func (lq *Linked[T]) Reset() {
+	lq.lock.Lock()
+	defer lq.lock.Unlock()
 
-	for _, element := range q.initialElements {
-		_ = q.Offer(element)
+	lq.head = nil
+	lq.tail = nil
+	lq.size = 0
+
+	for _, element := range lq.initialElements {
+		_ = lq.offer(element)
 	}
 }
 
 // Contains returns true if the queue contains the element.
-func (q *Linked[T]) Contains(value T) bool {
-	current := q.head
+func (lq *Linked[T]) Contains(value T) bool {
+	lq.lock.RLock()
+	defer lq.lock.RUnlock()
+
+	current := lq.head
 	for current != nil {
 		if current.value == value {
 			return true
@@ -96,30 +118,44 @@ func (q *Linked[T]) Contains(value T) bool {
 }
 
 // Peek retrieves but does not remove the head of the queue.
-func (q *Linked[T]) Peek() (elem T, _ error) {
-	if q.IsEmpty() {
+func (lq *Linked[T]) Peek() (elem T, _ error) {
+	lq.lock.RLock()
+	defer lq.lock.RUnlock()
+
+	if lq.isEmpty() {
 		return elem, ErrNoElementsAvailable
 	}
 
-	return q.head.value, nil
+	return lq.head.value, nil
 }
 
 // Size returns the number of elements in the queue.
-func (q *Linked[T]) Size() int {
-	return q.size
+func (lq *Linked[T]) Size() int {
+	lq.lock.RLock()
+	defer lq.lock.RUnlock()
+
+	return lq.size
 }
 
 // IsEmpty returns true if the queue is empty, false otherwise.
-func (q *Linked[T]) IsEmpty() bool {
-	return q.size == 0
+func (lq *Linked[T]) IsEmpty() bool {
+	lq.lock.RLock()
+	defer lq.lock.RUnlock()
+
+	return lq.isEmpty()
+}
+
+// IsEmpty returns true if the queue is empty, false otherwise.
+func (lq *Linked[T]) isEmpty() bool {
+	return lq.size == 0
 }
 
 // Iterator returns a channel that will be filled with the elements.
 // It removes the elements from the queue.
-func (q *Linked[T]) Iterator() <-chan T {
+func (lq *Linked[T]) Iterator() <-chan T {
 	ch := make(chan T)
 
-	elems := q.Clear()
+	elems := lq.Clear()
 
 	go func() {
 		for _, e := range elems {
@@ -133,10 +169,13 @@ func (q *Linked[T]) Iterator() <-chan T {
 }
 
 // Clear removes and returns all elements from the queue.
-func (q *Linked[T]) Clear() []T {
-	elements := make([]T, 0, q.size)
+func (lq *Linked[T]) Clear() []T {
+	lq.lock.Lock()
+	defer lq.lock.Unlock()
 
-	current := q.head
+	elements := make([]T, 0, lq.size)
+
+	current := lq.head
 	for current != nil {
 		elements = append(elements, current.value)
 		next := current.next
@@ -144,9 +183,9 @@ func (q *Linked[T]) Clear() []T {
 	}
 
 	// Clear the queue
-	q.head = nil
-	q.tail = nil
-	q.size = 0
+	lq.head = nil
+	lq.tail = nil
+	lq.size = 0
 
 	return elements
 }

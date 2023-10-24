@@ -15,7 +15,7 @@
 
 ---
 
-The `queue` package provides thread-safe generic implementations in Go for the following data structures: `BlockingQueue`, `PriorityQueue` and `CircularQueue`.
+The `queue` package provides thread-safe generic implementations in Go for the following data structures: `BlockingQueue`, `PriorityQueue`, `CircularQueue` and `Linked Queue`.
 
 A queue is a sequence of entities that is open at both ends where the elements are
 added (enqueued) to the tail (back) of the queue and removed (dequeued) from the head (front) of the queue.
