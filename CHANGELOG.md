@@ -1,3 +1,13 @@
+## v1.3.0 (2023-10-24)
+
+### Feat
+
+- **linked**: add linked queue implementation with tests
+
+### Fix
+
+- **linked**: make linked queue implementation thread-safe
+
 ## v1.2.1 (2023-05-08)
 
 ### Fix
