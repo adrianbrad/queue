@@ -354,6 +354,7 @@ func TestPriority(t *testing.T) {
 			if _, err := priorityQueue.Get(); err != nil {
 				t.Fatalf("expected no error, got %v", err)
 			}
+
 			priorityQueue.Reset()
 
 			if priorityQueue.Size() != 2 {

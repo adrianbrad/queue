@@ -570,6 +570,7 @@ func TestBlocking(t *testing.T) {
 			)
 
 			added := make(chan struct{}, initialSize+1)
+
 			for i := 1; i <= initialSize+1; i++ {
 				go func(i int) {
 					blockingQueue.OfferWait(i)
@@ -578,6 +579,7 @@ func TestBlocking(t *testing.T) {
 			}
 
 			time.Sleep(time.Millisecond)
+
 			_ = blockingQueue.Clear()
 
 			// one groutine block, and three are added
@@ -586,12 +588,15 @@ func TestBlocking(t *testing.T) {
 			}
 
 			time.Sleep(time.Millisecond)
+
 			if blockingQueue.Size() != initialSize {
 				t.Fatalf("expected size to be %d, got %d", initialSize, blockingQueue.Size())
 			}
 
 			_ = blockingQueue.GetWait()
+
 			time.Sleep(time.Millisecond)
+
 			if blockingQueue.Size() != initialSize {
 				t.Fatalf("expected size to be %d, got %d", initialSize, blockingQueue.Size())
 			}
@@ -617,6 +622,7 @@ func TestBlocking(t *testing.T) {
 			}
 
 			retrievedElem := make(chan int, initialSize+1)
+
 			for i := 1; i <= initialSize+1; i++ {
 				go func() {
 					retrievedElem <- blockingQueue.GetWait()
@@ -636,6 +642,7 @@ func TestBlocking(t *testing.T) {
 			}
 
 			blockingQueue.OfferWait(4)
+
 			if e := <-retrievedElem; e != 4 {
 				t.Fatalf("expected elem to be %d, got %d", 4, e)
 			}
