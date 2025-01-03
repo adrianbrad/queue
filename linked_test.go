@@ -111,7 +111,7 @@ func TestLinked(t *testing.T) {
 			expectedElems := []int{1, 2}
 
 			if !reflect.DeepEqual(expectedElems, queueElems) {
-				t.Fatalf("expected elems to be %v, got %v", expectedElems, queueElems)
+				t.Fatalf("expected elements to be %v, got %v", expectedElems, queueElems)
 			}
 		})
 	})
@@ -173,7 +173,7 @@ func TestLinked(t *testing.T) {
 		expectedElems := []int{2, 3, 4}
 
 		if !reflect.DeepEqual(expectedElems, queueElems) {
-			t.Fatalf("expected elems to be %v, got %v", expectedElems, queueElems)
+			t.Fatalf("expected elements to be %v, got %v", expectedElems, queueElems)
 		}
 	})
 
@@ -206,7 +206,7 @@ func TestLinked(t *testing.T) {
 		expectedElems := []int{1, 2, 3, 4}
 
 		if !reflect.DeepEqual(expectedElems, queueElems) {
-			t.Fatalf("expected elems to be %v, got %v", expectedElems, queueElems)
+			t.Fatalf("expected elements to be %v, got %v", expectedElems, queueElems)
 		}
 	})
 
@@ -228,7 +228,7 @@ func TestLinked(t *testing.T) {
 		}
 
 		if !reflect.DeepEqual(elems, iterElems) {
-			t.Fatalf("expected elems to be %v, got %v", elems, iterElems)
+			t.Fatalf("expected elements to be %v, got %v", elems, iterElems)
 		}
 	})
 }

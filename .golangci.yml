@@ -148,7 +148,6 @@ linters:
     - err113 # Golang linter to check the errors handling expressions
     - gocritic # Provides many diagnostics that check for bugs, performance and style issues.
     - exhaustive # Check exhaustiveness of enum switch statements
-    - exportloopref	# checks for pointers to enclosing loop variables -- VERY IMPORTANT TO USE
     - errname # Checks that sentinel errors are prefixed with the Err and error types are suffixed with the Error.
     - forcetypeassert #	finds forced type assertions
     - importas # Enforces consistent import aliases
@@ -178,6 +177,21 @@ linters:
     - reassign # Checks that package variables are not reassigne
     - musttag # linter that enforces field tags in (un)marshaled structslinter that enforces field tags in (un)marshaled structs
     - dupword # checks for duplicate words in the source code comments.
+    - testableexamples # checks if examples are testable (have an expected output)
+    - fatcontext # Detects potential fat contexts in loops or function literals.
+    - copyloopvar # Detects places where loop variables are copied.
+    - intrange # Detect loops that could use the Go 1.22 integer range feature.
+    - perfsprint # Detects performance issues with fmt.Sprintf.
+    - inamedparam # Detects interfaces with unnamed method parameters.
+    - gochecksumtype # Detects the use of checksum types in Go code.
+    - mirror # Use right mirror functions for string/[]byte performance bust.
+    - tagalign # Align and sort tags for Go struct.
+    - exptostd # Detects functions from golang.org/x/exp/ that can be replaced by std functions.
+    - nilnesserr # Detects nil errors in Go code.
+    - usetesting # Detects when some calls can be replaced by methods from the testing package.
+    - recvcheck # Golang linter checks for receiver type consistency.
+    - iface # Detects the incorrect use of interfaces.
+
 issues:
   exclude-use-default: false
   include:

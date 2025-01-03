@@ -13,13 +13,13 @@ type Queue[T comparable] interface {
 	Get() (T, error)
 
 	// Offer inserts the element to the tail of the queue.
-	Offer(T) error
+	Offer(elem T) error
 
 	// Reset sets the queue to its initial state.
 	Reset()
 
 	// Contains returns true if the queue contains the element.
-	Contains(T) bool
+	Contains(elem T) bool
 
 	// Peek retrieves but does not remove the head of the queue.
 	Peek() (T, error)

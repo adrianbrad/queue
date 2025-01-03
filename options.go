@@ -6,7 +6,7 @@ type options struct {
 
 // An Option configures a Queue using the functional options paradigm.
 type Option interface {
-	apply(*options)
+	apply(o *options)
 }
 
 type capacityOption int

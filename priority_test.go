@@ -41,14 +41,14 @@ func TestPriority(t *testing.T) {
 		size := priorityQueue.Size()
 
 		if priorityQueue.Size() != 2 {
-			t.Fatalf("expected size to be 2, got %d with elems: %v", size, priorityQueue.Clear())
+			t.Fatalf("expected size to be 2, got %d with elements: %v", size, priorityQueue.Clear())
 		}
 
 		elems = priorityQueue.Clear()
 		expectedElems := []int{1, 2}
 
 		if !reflect.DeepEqual([]int{1, 2}, elems) {
-			t.Fatalf("expected elems to be %v, got %v", expectedElems, elems)
+			t.Fatalf("expected elements to be %v, got %v", expectedElems, elems)
 		}
 	})
 
@@ -76,7 +76,7 @@ func TestPriority(t *testing.T) {
 			expectedElems := []int{1, 2, 4, 5}
 
 			if !reflect.DeepEqual(expectedElems, queueElems) {
-				t.Fatalf("expected elems to be %v, got %v", expectedElems, queueElems)
+				t.Fatalf("expected elements to be %v, got %v", expectedElems, queueElems)
 			}
 
 			newElems := make([]int, 10)
@@ -91,7 +91,7 @@ func TestPriority(t *testing.T) {
 
 			queueElems = priorityQueue.Clear()
 			if !reflect.DeepEqual(newElems, queueElems) {
-				t.Fatalf("expected elems to be %v, got %v", newElems, queueElems)
+				t.Fatalf("expected elements to be %v, got %v", newElems, queueElems)
 			}
 		})
 
@@ -161,7 +161,7 @@ func TestPriority(t *testing.T) {
 			queueElems := priorityQueue.Clear()
 
 			if !reflect.DeepEqual(elems, queueElems) {
-				t.Fatalf("expected elems to be %v, got %v", elems, queueElems)
+				t.Fatalf("expected elements to be %v, got %v", elems, queueElems)
 			}
 		})
 
@@ -173,7 +173,7 @@ func TestPriority(t *testing.T) {
 			queueElems := priorityQueue.Clear()
 
 			if len(queueElems) != 0 {
-				t.Fatalf("expected elems to be empty, got %v", queueElems)
+				t.Fatalf("expected elements to be empty, got %v", queueElems)
 			}
 		})
 	})
@@ -226,7 +226,7 @@ func TestPriority(t *testing.T) {
 		}
 
 		if !reflect.DeepEqual(elems, iterElems) {
-			t.Fatalf("expected elems to be %v, got %v", elems, iterElems)
+			t.Fatalf("expected elements to be %v, got %v", elems, iterElems)
 		}
 	})
 

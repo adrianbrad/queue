@@ -155,7 +155,7 @@ func TestBlocking(t *testing.T) {
 			queueElems := blockingQueue.Clear()
 
 			if !reflect.DeepEqual(elems, queueElems) {
-				t.Fatalf("expected elems to be %v, got %v", elems, queueElems)
+				t.Fatalf("expected elements to be %v, got %v", elems, queueElems)
 			}
 		})
 
@@ -167,7 +167,7 @@ func TestBlocking(t *testing.T) {
 			queueElems := blockingQueue.Clear()
 
 			if len(queueElems) != 0 {
-				t.Fatalf("expected elems to be empty, got %v", queueElems)
+				t.Fatalf("expected elements to be empty, got %v", queueElems)
 			}
 		})
 	})
@@ -220,7 +220,7 @@ func TestBlocking(t *testing.T) {
 		}
 
 		if !reflect.DeepEqual(elems, iterElems) {
-			t.Fatalf("expected elems to be %v, got %v", elems, iterElems)
+			t.Fatalf("expected elements to be %v, got %v", elems, iterElems)
 		}
 	})
 
