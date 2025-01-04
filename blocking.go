@@ -1,6 +1,8 @@
 package queue
 
 import (
+	"encoding/json"
+	"fmt"
 	"sync"
 )
 
@@ -294,4 +296,27 @@ func (bq *Blocking[T]) get() (v T, _ error) {
 	bq.elementsIndex++
 
 	return elem, nil
+}
+
+// MarshalJSON serializes the Blocking queue to JSON.
+func (bq *Blocking[T]) MarshalJSON() ([]byte, error) {
+	bq.lock.RLock()
+
+	if bq.IsEmpty() {
+		bq.lock.RUnlock()
+		return []byte("[]"), nil
+	}
+
+	// Extract elements from `elements` starting at `elementsIndex`.
+	elements := bq.elements[bq.elementsIndex:]
+
+	bq.lock.RUnlock()
+
+	// Marshal the slice of elements into JSON.
+	data, err := json.Marshal(elements)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal blocking queue: %w", err)
+	}
+
+	return data, nil
 }

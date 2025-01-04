@@ -1,6 +1,8 @@
 package queue_test
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"reflect"
 	"sort"
@@ -362,6 +364,24 @@ func TestPriority(t *testing.T) {
 			}
 		})
 	})
+
+	t.Run("MarshalJSON", func(t *testing.T) {
+		t.Parallel()
+
+		elems := []int{3, 2, 1}
+
+		priorityQueue := queue.NewPriority(elems, lessAscending)
+
+		marshaled, err := json.Marshal(priorityQueue)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+
+		expectedMarshaled := []byte(`[3,2,1]`)
+		if !bytes.Equal(expectedMarshaled, marshaled) {
+			t.Fatalf("expected marshaled to be %s, got %s", expectedMarshaled, marshaled)
+		}
+	})
 }
 
 func FuzzPriority(f *testing.F) {
@@ -411,6 +431,22 @@ func FuzzPriority(f *testing.F) {
 }
 
 func BenchmarkPriorityQueue(b *testing.B) {
+	b.Run("MarshalJSON", func(b *testing.B) {
+		priorityQueue := queue.NewPriority[int](
+			[]int{2, 3, 1, 5, 4},
+			func(elem, otherElem int) bool {
+				return elem < otherElem
+			},
+		)
+
+		b.ReportAllocs()
+		b.ResetTimer()
+
+		for i := 0; i <= b.N; i++ {
+			_, _ = priorityQueue.MarshalJSON()
+		}
+	})
+
 	b.Run("Peek", func(b *testing.B) {
 		priorityQueue := queue.NewPriority([]int{1}, func(elem, otherElem int) bool {
 			return elem < otherElem

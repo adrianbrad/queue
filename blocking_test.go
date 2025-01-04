@@ -1,6 +1,8 @@
 package queue_test
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
@@ -703,6 +705,24 @@ func TestBlocking(t *testing.T) {
 				t.Fatalf("expected size to be %d, got %d", 0, blockingQueue.Size())
 			}
 		})
+	})
+
+	t.Run("MarshalJSON", func(t *testing.T) {
+		t.Parallel()
+
+		elems := []int{3, 2, 1}
+
+		q := queue.NewBlocking(elems)
+
+		marshaled, err := json.Marshal(q)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+
+		expectedMarshaled := []byte(`[3,2,1]`)
+		if !bytes.Equal(expectedMarshaled, marshaled) {
+			t.Fatalf("expected marshaled to be %s, got %s", expectedMarshaled, marshaled)
+		}
 	})
 }
 

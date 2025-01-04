@@ -1,6 +1,8 @@
 package queue_test
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"reflect"
 	"testing"
@@ -288,6 +290,24 @@ func TestCircular(t *testing.T) {
 
 		if !reflect.DeepEqual(elems, iterElems) {
 			t.Fatalf("expected elements to be %v, got %v", elems, iterElems)
+		}
+	})
+
+	t.Run("MarshalJSON", func(t *testing.T) {
+		t.Parallel()
+
+		elems := []int{3, 2, 1}
+
+		q := queue.NewCircular(elems, 4)
+
+		marshaled, err := json.Marshal(q)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+
+		expectedMarshaled := []byte(`[3,2,1]`)
+		if !bytes.Equal(expectedMarshaled, marshaled) {
+			t.Fatalf("expected marshaled to be %s, got %s", expectedMarshaled, marshaled)
 		}
 	})
 }

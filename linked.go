@@ -1,6 +1,7 @@
 package queue
 
 import (
+	"encoding/json"
 	"sync"
 )
 
@@ -188,4 +189,23 @@ func (lq *Linked[T]) Clear() []T {
 	lq.size = 0
 
 	return elements
+}
+
+// MarshalJSON serializes the Linked queue to JSON.
+func (lq *Linked[T]) MarshalJSON() ([]byte, error) {
+	lq.lock.RLock()
+	defer lq.lock.RUnlock()
+
+	// Traverse the linked list and collect elements.
+	elements := make([]T, 0, lq.size)
+
+	current := lq.head
+
+	for current != nil {
+		elements = append(elements, current.value)
+		current = current.next
+	}
+
+	// Marshal the elements slice to JSON.
+	return json.Marshal(elements)
 }

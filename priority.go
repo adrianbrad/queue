@@ -2,6 +2,7 @@ package queue
 
 import (
 	"container/heap"
+	"encoding/json"
 	"sort"
 	"sync"
 )
@@ -268,4 +269,33 @@ func (pq *Priority[T]) Size() int {
 	defer pq.lock.RUnlock()
 
 	return pq.elements.Len()
+}
+
+// MarshalJSON serializes the Priority queue to JSON.
+func (pq *Priority[T]) MarshalJSON() ([]byte, error) {
+	pq.lock.RLock()
+
+	// Create a temporary copy of the heap to extract elements in order.
+	tempHeap := &priorityHeap[T]{
+		elems:    make([]T, len(pq.elements.elems)),
+		lessFunc: pq.elements.lessFunc,
+	}
+
+	copy(tempHeap.elems, pq.elements.elems)
+
+	pq.lock.RUnlock()
+
+	heap.Init(tempHeap)
+
+	output := make([]T, len(tempHeap.elems))
+
+	i := 0
+
+	for tempHeap.Len() > 0 {
+		// nolint: forcetypeassert, revive
+		output[i] = tempHeap.Pop().(T)
+		i++
+	}
+
+	return json.Marshal(output)
 }
