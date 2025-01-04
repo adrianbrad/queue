@@ -1,6 +1,7 @@
 package queue
 
 import (
+	"encoding/json"
 	"sync"
 )
 
@@ -230,4 +231,26 @@ func (q *Circular[T]) get() (v T, _ error) {
 // isEmpty returns true if the queue is empty.
 func (q *Circular[T]) isEmpty() bool {
 	return q.size == 0
+}
+
+// MarshalJSON serializes the Circular queue to JSON.
+func (q *Circular[T]) MarshalJSON() ([]byte, error) {
+	q.lock.RLock()
+
+	if q.isEmpty() {
+		q.lock.RUnlock()
+		return []byte("[]"), nil
+	}
+
+	// Collect elements in logical order from head to tail.
+	elements := make([]T, 0, q.size)
+
+	for i := 0; i < q.size; i++ {
+		index := (q.head + i) % len(q.elems)
+		elements = append(elements, q.elems[index])
+	}
+
+	q.lock.RUnlock()
+
+	return json.Marshal(elements)
 }
