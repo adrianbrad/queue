@@ -761,12 +761,12 @@ func TestBlocking(t *testing.T) {
 	})
 }
 
-// failMarshal is a helper to fail the json marshalling of the queues
+// failMarshal is a helper to fail the json marshalling of the queues.
 type failMarshal struct{}
 
 var errFailMarshal = errors.New("intentional marshal error")
 
-func (f failMarshal) MarshalJSON() ([]byte, error) {
+func (failMarshal) MarshalJSON() ([]byte, error) {
 	return nil, errFailMarshal
 }
 
