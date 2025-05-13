@@ -1,3 +1,10 @@
+## v1.4.0 (2025-05-13)
+
+### Feat
+
+- **blocking**: fix `Reset()` unbound memory growth potential
+- implement `MarshalJSON` for all queues
+
 ## v1.3.0 (2023-10-24)
 
 ### Feat
