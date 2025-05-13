@@ -296,19 +296,39 @@ func TestCircular(t *testing.T) {
 	t.Run("MarshalJSON", func(t *testing.T) {
 		t.Parallel()
 
-		elems := []int{3, 2, 1}
+		t.Run("HasElements", func(t *testing.T) {
+			t.Parallel()
 
-		q := queue.NewCircular(elems, 4)
+			elems := []int{3, 2, 1}
 
-		marshaled, err := json.Marshal(q)
-		if err != nil {
-			t.Fatalf("expected no error, got %v", err)
-		}
+			q := queue.NewCircular(elems, 4)
 
-		expectedMarshaled := []byte(`[3,2,1]`)
-		if !bytes.Equal(expectedMarshaled, marshaled) {
-			t.Fatalf("expected marshaled to be %s, got %s", expectedMarshaled, marshaled)
-		}
+			marshaled, err := json.Marshal(q)
+			if err != nil {
+				t.Fatalf("expected no error, got %v", err)
+			}
+
+			expectedMarshaled := []byte(`[3,2,1]`)
+			if !bytes.Equal(expectedMarshaled, marshaled) {
+				t.Fatalf("expected marshaled to be %s, got %s", expectedMarshaled, marshaled)
+			}
+		})
+
+		t.Run("Empty", func(t *testing.T) {
+			t.Parallel()
+
+			q := queue.NewCircular[int](nil, 1)
+
+			marshaled, err := json.Marshal(q)
+			if err != nil {
+				t.Fatalf("expected no error, got %v", err)
+			}
+
+			expectedMarshaled := []byte(`[]`)
+			if !bytes.Equal(expectedMarshaled, marshaled) {
+				t.Fatalf("expected marshaled to be %s, got %s", expectedMarshaled, marshaled)
+			}
+		})
 	})
 }
 

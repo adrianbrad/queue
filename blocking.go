@@ -2,7 +2,6 @@ package queue
 
 import (
 	"encoding/json"
-	"fmt"
 	"sync"
 )
 
@@ -286,11 +285,5 @@ func (bq *Blocking[T]) MarshalJSON() ([]byte, error) {
 		return []byte("[]"), nil
 	}
 
-	// Marshal the slice of elements into JSON.
-	data, err := json.Marshal(bq.elems)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal blocking queue: %w", err)
-	}
-
-	return data, nil
+	return json.Marshal(bq.elems)
 }
