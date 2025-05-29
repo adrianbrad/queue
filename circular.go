@@ -141,8 +141,8 @@ func (q *Circular[T]) Clear() []T {
 // Iterator returns an iterator over the elements in the queue.
 // It removes the elements from the queue.
 func (q *Circular[T]) Iterator() <-chan T {
-	q.lock.RLock()
-	defer q.lock.RUnlock()
+	q.lock.Lock()
+	defer q.lock.Unlock()
 
 	// use a buffered channel to avoid blocking the iterator.
 	iteratorCh := make(chan T, q.size)

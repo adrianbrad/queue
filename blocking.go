@@ -156,8 +156,8 @@ func (bq *Blocking[T]) Clear() []T {
 // Iterator returns an iterator over the elements in this queue.
 // It removes the elements from the queue.
 func (bq *Blocking[T]) Iterator() <-chan T {
-	bq.lock.RLock()
-	defer bq.lock.RUnlock()
+	bq.lock.Lock()
+	defer bq.lock.Unlock()
 
 	// use a buffered channel to avoid blocking the iterator.
 	iteratorCh := make(chan T, bq.size())

@@ -207,8 +207,8 @@ func (pq *Priority[T]) Clear() []T {
 // Iterator returns an iterator over the elements in the queue.
 // It removes the elements from the queue.
 func (pq *Priority[T]) Iterator() <-chan T {
-	pq.lock.RLock()
-	defer pq.lock.RUnlock()
+	pq.lock.Lock()
+	defer pq.lock.Unlock()
 
 	// use a buffered channel to avoid blocking the iterator.
 	iteratorCh := make(chan T, pq.elements.Len())
