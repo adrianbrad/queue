@@ -221,16 +221,37 @@ func (q *Circular[T]) get() (v T, _ error) {
 		return v, ErrNoElementsAvailable
 	}
 
+	item := q.pop()
+
+	return item, nil
+}
+
+func (q *Circular[T]) pop() (v T) {
 	item := q.elems[q.head]
+	q.elems[q.head] = *new(T) // clear popped slot for garbage collection
 	q.head = (q.head + 1) % len(q.elems)
 	q.size--
 
-	return item, nil
+	return item
 }
 
 // isEmpty returns true if the queue is empty.
 func (q *Circular[T]) isEmpty() bool {
 	return q.size == 0
+}
+
+// drainQueue collects and removes all elements from the queue.
+// It returns a slice containing all elements in their logical order.
+// Note: This method assumes the caller holds an appropriate lock.
+func (q *Circular[T]) drainQueue() []T {
+	// Preallocate the slice with the exact size
+	elems := make([]T, q.size)
+
+	for i := 0; i < q.size; i++ {
+		elems[i] = q.pop()
+	}
+
+	return elems
 }
 
 // MarshalJSON serializes the Circular queue to JSON.
@@ -243,11 +264,11 @@ func (q *Circular[T]) MarshalJSON() ([]byte, error) {
 	}
 
 	// Collect elements in logical order from head to tail.
-	elements := make([]T, 0, q.size)
+	elements := make([]T, q.size)
 
 	for i := 0; i < q.size; i++ {
 		index := (q.head + i) % len(q.elems)
-		elements = append(elements, q.elems[index])
+		elements[i] = q.elems[index]
 	}
 
 	q.lock.RUnlock()
