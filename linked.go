@@ -154,17 +154,15 @@ func (lq *Linked[T]) isEmpty() bool {
 // Iterator returns a channel that will be filled with the elements.
 // It removes the elements from the queue.
 func (lq *Linked[T]) Iterator() <-chan T {
-	ch := make(chan T)
-
 	elems := lq.Clear()
 
-	go func() {
-		for _, e := range elems {
-			ch <- e
-		}
+	ch := make(chan T, len(elems))
 
-		close(ch)
-	}()
+	for i := range elems {
+		ch <- elems[i]
+	}
+
+	close(ch)
 
 	return ch
 }
