@@ -16,7 +16,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: anchore/scan-action@v6
+      - uses: anchore/scan-action@v7
         with:
           path: "."
           fail-build: true
