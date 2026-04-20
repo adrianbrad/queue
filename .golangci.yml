@@ -6,11 +6,13 @@ linters:
   enable:
     - bidichk
     - bodyclose
+    - canonicalheader
     - containedctx
     - contextcheck
     - decorder
     - dupl
     - dupword
+    - embeddedstructfieldcheck
     - err113
     - errcheck
     - errchkjson
@@ -19,6 +21,7 @@ linters:
     - exptostd
     - fatcontext
     - forcetypeassert
+    - funcorder
     - gochecksumtype
     - gocognit
     - goconst
@@ -45,17 +48,28 @@ linters:
     - reassign
     - recvcheck
     - revive
+    - sloglint
+    - spancheck
     - staticcheck
     - tagalign
     - tagliatelle
     - testableexamples
+    - testifylint
     - thelper
     - unused
     - usestdlibvars
     - usetesting
     - varnamelen
-    - wsl
+    - wsl_v5
   settings:
+    wsl_v5:
+      allow-first-in-block: true
+      allow-whole-block: false
+      branch-max-lines: 2
+    funcorder:
+      constructor: true
+      struct-method: true
+      alphabetical: false
     dupl:
       threshold: 300
     errcheck:

@@ -63,6 +63,7 @@ func TestBlocking(t *testing.T) {
 					elem := blockingQueue.GetWait()
 
 					resultMutex.Lock()
+
 					result = append(result, elem)
 					resultMutex.Unlock()
 
@@ -104,7 +105,7 @@ func TestBlocking(t *testing.T) {
 
 				elem := blockingQueue.PeekWait()
 
-				t.Logf("peek done")
+				t.Log("peek done")
 
 				if elems[0] != elem {
 					t.Errorf("expected elem to be %d, got %d", elems[0], elem)
@@ -113,6 +114,7 @@ func TestBlocking(t *testing.T) {
 
 			go func() {
 				defer wg.Done()
+
 				<-peekDone
 
 				elem := blockingQueue.GetWait()
@@ -132,8 +134,6 @@ func TestBlocking(t *testing.T) {
 			const noRoutines = 100
 
 			for i := 1; i <= noRoutines; i++ {
-				i := i
-
 				t.Run(
 					fmt.Sprintf("%dRoutinesWaiting", i),
 					func(t *testing.T) {
@@ -185,7 +185,7 @@ func TestBlocking(t *testing.T) {
 			blockingQueue := queue.NewBlocking(elems)
 
 			if !blockingQueue.Contains(2) {
-				t.Fatalf("expected queue to contain 2")
+				t.Fatal("expected queue to contain 2")
 			}
 		})
 
@@ -197,7 +197,7 @@ func TestBlocking(t *testing.T) {
 			blockingQueue := queue.NewBlocking(elems)
 
 			if blockingQueue.Contains(4) {
-				t.Fatalf("expected queue to not contain 4")
+				t.Fatal("expected queue to not contain 4")
 			}
 		})
 	})
@@ -212,7 +212,7 @@ func TestBlocking(t *testing.T) {
 		iterCh := blockingQueue.Iterator()
 
 		if !blockingQueue.IsEmpty() {
-			t.Fatalf("expected queue to be empty")
+			t.Fatal("expected queue to be empty")
 		}
 
 		iterElems := make([]int, 0, len(elems))
@@ -235,7 +235,7 @@ func TestBlocking(t *testing.T) {
 			blockingQueue := queue.NewBlocking([]int{})
 
 			if !blockingQueue.IsEmpty() {
-				t.Fatalf("expected queue to be empty")
+				t.Fatal("expected queue to be empty")
 			}
 		})
 
@@ -245,7 +245,7 @@ func TestBlocking(t *testing.T) {
 			blockingQueue := queue.NewBlocking([]int{1})
 
 			if blockingQueue.IsEmpty() {
-				t.Fatalf("expected queue to not be empty")
+				t.Fatal("expected queue to not be empty")
 			}
 		})
 	})
@@ -342,7 +342,7 @@ func TestBlocking(t *testing.T) {
 
 			select {
 			case <-added:
-				t.Fatalf("received unexpected signal")
+				t.Fatal("received unexpected signal")
 			case <-time.After(time.Millisecond):
 			}
 
@@ -576,6 +576,7 @@ func TestBlocking(t *testing.T) {
 			for i := 1; i <= initialSize+1; i++ {
 				go func(i int) {
 					blockingQueue.OfferWait(i)
+
 					added <- struct{}{}
 				}(i)
 			}
@@ -670,11 +671,13 @@ func TestBlocking(t *testing.T) {
 			}
 
 			getCh := make(chan int, 1)
+
 			go func() {
 				getCh <- blockingQueue.GetWait()
 			}()
 
 			peekCh := make(chan int, 1)
+
 			go func() {
 				peekCh <- blockingQueue.PeekWait()
 			}()
@@ -688,17 +691,17 @@ func TestBlocking(t *testing.T) {
 				select {
 				case <-peekCh:
 				case <-time.After(time.Millisecond):
-					t.Logf("GetWait is called before PeekWait")
+					t.Log("GetWait is called before PeekWait")
 				}
 			case <-peekCh:
 				select {
 				case <-getCh:
-					t.Logf("PeekWait is called before GetWait")
+					t.Log("PeekWait is called before GetWait")
 				case <-time.After(time.Millisecond):
-					t.Fatalf("expected GetWait to not block")
+					t.Fatal("expected GetWait to not block")
 				}
 			case <-time.After(time.Millisecond):
-				t.Fatalf("expected GetWait or PeekWait not block")
+				t.Fatal("expected GetWait or PeekWait not block")
 			}
 
 			if blockingQueue.Size() != 0 {
@@ -735,7 +738,7 @@ func TestBlocking(t *testing.T) {
 
 			marshaled, err := json.Marshal(q)
 			if err == nil {
-				t.Fatalf("expected error, got nil")
+				t.Fatal("expected error, got nil")
 			}
 
 			if marshaled != nil {

@@ -188,7 +188,7 @@ func TestCircular(t *testing.T) {
 			circularQueue := queue.NewCircular(elems, 4)
 
 			if !circularQueue.Contains(2) {
-				t.Fatalf("expected elem to be found")
+				t.Fatal("expected elem to be found")
 			}
 		})
 
@@ -205,7 +205,7 @@ func TestCircular(t *testing.T) {
 			}
 
 			if circularQueue.Contains(1) {
-				t.Fatalf("expected elem to not be found")
+				t.Fatal("expected elem to not be found")
 			}
 		})
 
@@ -213,7 +213,7 @@ func TestCircular(t *testing.T) {
 			circularQueue := queue.NewCircular([]int{}, 1)
 
 			if circularQueue.Contains(1) {
-				t.Fatalf("expected elem to not be found")
+				t.Fatal("expected elem to not be found")
 			}
 		})
 	})
@@ -242,7 +242,7 @@ func TestCircular(t *testing.T) {
 		circularQueue := queue.NewCircular([]int{}, 1)
 
 		if !circularQueue.IsEmpty() {
-			t.Fatalf("expected queue to be empty")
+			t.Fatal("expected queue to be empty")
 		}
 	})
 
@@ -279,7 +279,7 @@ func TestCircular(t *testing.T) {
 		iterCh := circularQueue.Iterator()
 
 		if !circularQueue.IsEmpty() {
-			t.Fatalf("expected queue to be empty")
+			t.Fatal("expected queue to be empty")
 		}
 
 		iterElems := make([]int, 0, len(elems))

@@ -129,7 +129,7 @@ func TestLinked(t *testing.T) {
 			linkedQueue := queue.NewLinked(elems)
 
 			if !linkedQueue.Contains(2) {
-				t.Fatalf("expected elem to be found")
+				t.Fatal("expected elem to be found")
 			}
 		})
 
@@ -146,7 +146,7 @@ func TestLinked(t *testing.T) {
 			}
 
 			if linkedQueue.Contains(1) {
-				t.Fatalf("expected elem to not be found")
+				t.Fatal("expected elem to not be found")
 			}
 		})
 
@@ -154,7 +154,7 @@ func TestLinked(t *testing.T) {
 			linkedQueue := queue.NewLinked([]int{})
 
 			if linkedQueue.Contains(1) {
-				t.Fatalf("expected elem to not be found")
+				t.Fatal("expected elem to not be found")
 			}
 		})
 	})
@@ -183,7 +183,7 @@ func TestLinked(t *testing.T) {
 		linkedQueue := queue.NewLinked([]int{})
 
 		if !linkedQueue.IsEmpty() {
-			t.Fatalf("expected queue to be empty")
+			t.Fatal("expected queue to be empty")
 		}
 	})
 
@@ -220,7 +220,7 @@ func TestLinked(t *testing.T) {
 		iterCh := linkedQueue.Iterator()
 
 		if !linkedQueue.IsEmpty() {
-			t.Fatalf("expected queue to be empty")
+			t.Fatal("expected queue to be empty")
 		}
 
 		iterElems := make([]int, 0, len(elems))

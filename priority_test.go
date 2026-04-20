@@ -191,7 +191,7 @@ func TestPriority(t *testing.T) {
 			priorityQueue := queue.NewPriority(elems, lessAscending)
 
 			if !priorityQueue.Contains(2) {
-				t.Fatalf("expected queue to contain 2")
+				t.Fatal("expected queue to contain 2")
 			}
 		})
 
@@ -203,7 +203,7 @@ func TestPriority(t *testing.T) {
 			priorityQueue := queue.NewPriority(elems, lessAscending)
 
 			if priorityQueue.Contains(4) {
-				t.Fatalf("expected queue to not contain 4")
+				t.Fatal("expected queue to not contain 4")
 			}
 		})
 	})
@@ -218,7 +218,7 @@ func TestPriority(t *testing.T) {
 		iterCh := priorityQueue.Iterator()
 
 		if !priorityQueue.IsEmpty() {
-			t.Fatalf("expected queue to be empty")
+			t.Fatal("expected queue to be empty")
 		}
 
 		iterElems := make([]int, 0, len(elems))
@@ -241,7 +241,7 @@ func TestPriority(t *testing.T) {
 			priorityQueue := queue.NewPriority([]int{}, lessAscending)
 
 			if !priorityQueue.IsEmpty() {
-				t.Fatalf("expected queue to be empty")
+				t.Fatal("expected queue to be empty")
 			}
 		})
 
@@ -251,7 +251,7 @@ func TestPriority(t *testing.T) {
 			priorityQueue := queue.NewPriority([]int{1}, lessAscending)
 
 			if priorityQueue.IsEmpty() {
-				t.Fatalf("expected queue to not be empty")
+				t.Fatal("expected queue to not be empty")
 			}
 		})
 	})
