@@ -1,3 +1,28 @@
+## v1.5.0 (2026-04-20)
+
+### Fix
+
+- **priority,blocking,circular**: `Iterator()` now takes a write lock — it mutates queue state (was: read lock, race-prone)
+- **circular**: `Contains` loop bounds with non-zero head no longer skips elements or reads out of range
+- **circular**: `drainQueue` drains all elements (loop size captured before `pop` decrements it)
+
+### Perf
+
+- **circular**: preallocate slice for `Clear` and `MarshalJSON`; zero popped slot for GC
+- **linked**: `Iterator` fills a buffered channel synchronously instead of spawning a goroutine
+- **linked**: preallocate `Clear` and `MarshalJSON` results
+- **priority**: `Reset` simplified to single reslice + copy
+
+### Docs / security
+
+- Add `SECURITY.md` with private-disclosure process
+- Add `CONTRIBUTING.md`
+- Add `.github/CODEOWNERS`
+- Harden all GitHub Actions workflows: pinned by commit SHA, minimum `permissions:` scope
+- Add OpenSSF Scorecard workflow + README badges
+- Enforce 100% test coverage in CI
+- Add signed releases via goreleaser + cosign keyless (Sigstore)
+
 ## v1.4.0 (2025-05-13)
 
 ### Feat
