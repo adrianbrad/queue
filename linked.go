@@ -172,16 +172,14 @@ func (lq *Linked[T]) Clear() []T {
 	lq.lock.Lock()
 	defer lq.lock.Unlock()
 
-	elements := make([]T, 0, lq.size)
+	elements := make([]T, lq.size)
 
 	current := lq.head
-	for current != nil {
-		elements = append(elements, current.value)
-		next := current.next
-		current = next
+	for i := 0; current != nil; i++ {
+		elements[i] = current.value
+		current = current.next
 	}
 
-	// Clear the queue
 	lq.head = nil
 	lq.tail = nil
 	lq.size = 0
@@ -194,16 +192,13 @@ func (lq *Linked[T]) MarshalJSON() ([]byte, error) {
 	lq.lock.RLock()
 	defer lq.lock.RUnlock()
 
-	// Traverse the linked list and collect elements.
-	elements := make([]T, 0, lq.size)
+	elements := make([]T, lq.size)
 
 	current := lq.head
-
-	for current != nil {
-		elements = append(elements, current.value)
+	for i := 0; current != nil; i++ {
+		elements[i] = current.value
 		current = current.next
 	}
 
-	// Marshal the elements slice to JSON.
 	return json.Marshal(elements)
 }
