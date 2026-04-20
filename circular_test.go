@@ -13,212 +13,199 @@ import (
 func TestCircular(t *testing.T) {
 	t.Parallel()
 
-	t.Run("CapcaityOptionsOverwritesCapacityParam", func(t *testing.T) {
+	t.Run("CapcaityOptionsOverwritesCapacityParam", testCircularCapacityOptionOverwrites)
+	t.Run("ElemsLenGreaterThanCapacity", testCircularElemsLenGreaterThanCapacity)
+	t.Run("Get", testCircularGet)
+	t.Run("Peek", testCircularPeek)
+	t.Run("Offer", testCircularOffer)
+	t.Run("Contains", testCircularContains)
+	t.Run("Clear", testCircularClear)
+	t.Run("IsEmpty", testCircularIsEmpty)
+	t.Run("Reset", testCircularReset)
+	t.Run("Iterator", testCircularIterator)
+	t.Run("MarshalJSON", testCircularMarshalJSON)
+}
+
+func testCircularCapacityOptionOverwrites(t *testing.T) {
+	t.Parallel()
+
+	circularQueue := queue.NewCircular([]int{}, 1, queue.WithCapacity(2))
+
+	circularQueue.Offer(1)
+	circularQueue.Offer(2)
+
+	if circularQueue.Size() != 2 {
+		t.Fatalf("expected size to be 2, got %d", circularQueue.Size())
+	}
+}
+
+func testCircularElemsLenGreaterThanCapacity(t *testing.T) {
+	t.Parallel()
+
+	circularQueue := queue.NewCircular([]int{1, 2}, 1)
+
+	if circularQueue.Size() != 1 {
+		t.Fatalf("expected size to be 1, got %d", circularQueue.Size())
+	}
+}
+
+func testCircularGet(t *testing.T) {
+	t.Parallel()
+
+	t.Run("Success", func(t *testing.T) {
 		t.Parallel()
 
-		circularQueue := queue.NewCircular([]int{}, 1, queue.WithCapacity(2))
+		elems := []int{4, 1, 2}
 
-		circularQueue.Offer(1)
-		circularQueue.Offer(2)
+		circularQueue := queue.NewCircular(elems, len(elems))
+
+		elem, err := circularQueue.Get()
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+
+		if elem != 4 {
+			t.Fatalf("expected elem to be 4, got %d", elem)
+		}
 
 		if circularQueue.Size() != 2 {
 			t.Fatalf("expected size to be 2, got %d", circularQueue.Size())
 		}
 	})
 
-	t.Run("ElemsLenGreaterThanCapacity", func(t *testing.T) {
+	t.Run("ErrNoElementsAvailable", func(t *testing.T) {
 		t.Parallel()
 
-		circularQueue := queue.NewCircular([]int{1, 2}, 1)
+		var elems []int
 
-		if circularQueue.Size() != 1 {
-			t.Fatalf("expected size to be 1, got %d", circularQueue.Size())
+		circularQueue := queue.NewCircular(elems, 5)
+
+		if _, err := circularQueue.Get(); !errors.Is(err, queue.ErrNoElementsAvailable) {
+			t.Fatalf("expected error to be %v, got %v", queue.ErrNoElementsAvailable, err)
+		}
+	})
+}
+
+func testCircularPeek(t *testing.T) {
+	t.Parallel()
+
+	t.Run("Success", func(t *testing.T) {
+		t.Parallel()
+
+		elems := []int{4, 1, 2}
+
+		circularQueue := queue.NewCircular(elems, len(elems))
+
+		elem, err := circularQueue.Peek()
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+
+		if elem != 4 {
+			t.Fatalf("expected elem to be 4, got %d", elem)
+		}
+
+		if circularQueue.Size() != 3 {
+			t.Fatalf("expected size to be 3, got %d", circularQueue.Size())
 		}
 	})
 
-	t.Run("Get", func(t *testing.T) {
+	t.Run("ErrNoElementsAvailable", func(t *testing.T) {
 		t.Parallel()
 
-		t.Run("Success", func(t *testing.T) {
-			t.Parallel()
+		var elems []int
 
-			elems := []int{4, 1, 2}
+		circularQueue := queue.NewCircular(elems, 5)
 
-			circularQueue := queue.NewCircular(elems, len(elems))
+		if _, err := circularQueue.Peek(); !errors.Is(err, queue.ErrNoElementsAvailable) {
+			t.Fatalf("expected error to be %v, got %v", queue.ErrNoElementsAvailable, err)
+		}
+	})
+}
 
-			elem, err := circularQueue.Get()
-			if err != nil {
-				t.Fatalf("expected no error, got %v", err)
-			}
+func testCircularOffer(t *testing.T) {
+	t.Parallel()
 
-			if elem != 4 {
-				t.Fatalf("expected elem to be 4, got %d", elem)
-			}
+	t.Run("SuccessEmptyQueue", func(t *testing.T) {
+		var elems []int
 
-			if circularQueue.Size() != 2 {
-				t.Fatalf("expected size to be 2, got %d", circularQueue.Size())
-			}
-		})
+		circularQueue := queue.NewCircular(elems, 5)
 
-		t.Run("ErrNoElementsAvailable", func(t *testing.T) {
-			t.Parallel()
+		err := circularQueue.Offer(1)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
 
-			var elems []int
+		err = circularQueue.Offer(2)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
 
-			circularQueue := queue.NewCircular(elems, 5)
+		if circularQueue.Size() != 2 {
+			t.Fatalf("expected size to be 2, got %d", circularQueue.Size())
+		}
 
-			if _, err := circularQueue.Get(); !errors.Is(err, queue.ErrNoElementsAvailable) {
-				t.Fatalf("expected error to be %v, got %v", queue.ErrNoElementsAvailable, err)
-			}
-		})
+		queueElems := circularQueue.Clear()
+		expectedElems := []int{1, 2}
+
+		if !reflect.DeepEqual(expectedElems, queueElems) {
+			t.Fatalf("expected elements to be %v, got %v", expectedElems, queueElems)
+		}
 	})
 
-	t.Run("Peek", func(t *testing.T) {
+	t.Run("SuccessFullQueue", func(t *testing.T) {
+		elems := []int{1, 2, 3, 4}
+
+		circularQueue := queue.NewCircular(elems, 4)
+
+		err := circularQueue.Offer(5)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+
+		if circularQueue.Size() != 4 {
+			t.Fatalf("expected size to be 4, got %d", circularQueue.Size())
+		}
+
+		nextElem, err := circularQueue.Peek()
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+
+		if nextElem != 5 {
+			t.Fatalf("expected next elem to be 4, got %d", nextElem)
+		}
+
+		err = circularQueue.Offer(6)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+
+		queueElems := circularQueue.Clear()
+		expectedElems := []int{5, 6, 3, 4}
+
+		if !reflect.DeepEqual(expectedElems, queueElems) {
+			t.Fatalf("expected elements to be %v, got %v", expectedElems, queueElems)
+		}
+	})
+}
+
+func testCircularContains(t *testing.T) {
+	t.Parallel()
+
+	t.Run("Success", func(t *testing.T) {
 		t.Parallel()
 
-		t.Run("Success", func(t *testing.T) {
-			t.Parallel()
+		elems := []int{1, 2, 3, 4}
 
-			elems := []int{4, 1, 2}
+		circularQueue := queue.NewCircular(elems, 4)
 
-			circularQueue := queue.NewCircular(elems, len(elems))
-
-			elem, err := circularQueue.Peek()
-			if err != nil {
-				t.Fatalf("expected no error, got %v", err)
-			}
-
-			if elem != 4 {
-				t.Fatalf("expected elem to be 4, got %d", elem)
-			}
-
-			if circularQueue.Size() != 3 {
-				t.Fatalf("expected size to be 3, got %d", circularQueue.Size())
-			}
-		})
-
-		t.Run("ErrNoElementsAvailable", func(t *testing.T) {
-			t.Parallel()
-
-			var elems []int
-
-			circularQueue := queue.NewCircular(elems, 5)
-
-			if _, err := circularQueue.Peek(); !errors.Is(err, queue.ErrNoElementsAvailable) {
-				t.Fatalf("expected error to be %v, got %v", queue.ErrNoElementsAvailable, err)
-			}
-		})
+		if !circularQueue.Contains(2) {
+			t.Fatal("expected elem to be found")
+		}
 	})
 
-	t.Run("Offer", func(t *testing.T) {
-		t.Parallel()
-
-		t.Run("SuccessEmptyQueue", func(t *testing.T) {
-			var elems []int
-
-			circularQueue := queue.NewCircular(elems, 5)
-
-			err := circularQueue.Offer(1)
-			if err != nil {
-				t.Fatalf("expected no error, got %v", err)
-			}
-
-			err = circularQueue.Offer(2)
-			if err != nil {
-				t.Fatalf("expected no error, got %v", err)
-			}
-
-			if circularQueue.Size() != 2 {
-				t.Fatalf("expected size to be 2, got %d", circularQueue.Size())
-			}
-
-			queueElems := circularQueue.Clear()
-			expectedElems := []int{1, 2}
-
-			if !reflect.DeepEqual(expectedElems, queueElems) {
-				t.Fatalf("expected elements to be %v, got %v", expectedElems, queueElems)
-			}
-		})
-
-		t.Run("SuccessFullQueue", func(t *testing.T) {
-			elems := []int{1, 2, 3, 4}
-
-			circularQueue := queue.NewCircular(elems, 4)
-
-			err := circularQueue.Offer(5)
-			if err != nil {
-				t.Fatalf("expected no error, got %v", err)
-			}
-
-			if circularQueue.Size() != 4 {
-				t.Fatalf("expected size to be 4, got %d", circularQueue.Size())
-			}
-
-			nextElem, err := circularQueue.Peek()
-			if err != nil {
-				t.Fatalf("expected no error, got %v", err)
-			}
-
-			if nextElem != 5 {
-				t.Fatalf("expected next elem to be 4, got %d", nextElem)
-			}
-
-			err = circularQueue.Offer(6)
-			if err != nil {
-				t.Fatalf("expected no error, got %v", err)
-			}
-
-			queueElems := circularQueue.Clear()
-			expectedElems := []int{5, 6, 3, 4}
-
-			if !reflect.DeepEqual(expectedElems, queueElems) {
-				t.Fatalf("expected elements to be %v, got %v", expectedElems, queueElems)
-			}
-		})
-	})
-
-	t.Run("Contains", func(t *testing.T) {
-		t.Parallel()
-
-		t.Run("Success", func(t *testing.T) {
-			t.Parallel()
-
-			elems := []int{1, 2, 3, 4}
-
-			circularQueue := queue.NewCircular(elems, 4)
-
-			if !circularQueue.Contains(2) {
-				t.Fatal("expected elem to be found")
-			}
-		})
-
-		t.Run("NotFoundAfterGet", func(t *testing.T) {
-			t.Parallel()
-
-			elems := []int{1, 2, 3, 4}
-
-			circularQueue := queue.NewCircular(elems, 4)
-
-			_, err := circularQueue.Get()
-			if err != nil {
-				t.Fatalf("expected no error, got %v", err)
-			}
-
-			if circularQueue.Contains(1) {
-				t.Fatal("expected elem to not be found")
-			}
-		})
-
-		t.Run("EmptyQueue", func(t *testing.T) {
-			circularQueue := queue.NewCircular([]int{}, 1)
-
-			if circularQueue.Contains(1) {
-				t.Fatal("expected elem to not be found")
-			}
-		})
-	})
-
-	t.Run("Clear", func(t *testing.T) {
+	t.Run("NotFoundAfterGet", func(t *testing.T) {
 		t.Parallel()
 
 		elems := []int{1, 2, 3, 4}
@@ -230,105 +217,130 @@ func TestCircular(t *testing.T) {
 			t.Fatalf("expected no error, got %v", err)
 		}
 
-		queueElems := circularQueue.Clear()
-		expectedElems := []int{2, 3, 4}
-
-		if !reflect.DeepEqual(expectedElems, queueElems) {
-			t.Fatalf("expected elements to be %v, got %v", expectedElems, queueElems)
+		if circularQueue.Contains(1) {
+			t.Fatal("expected elem to not be found")
 		}
 	})
 
-	t.Run("IsEmpty", func(t *testing.T) {
+	t.Run("EmptyQueue", func(t *testing.T) {
 		circularQueue := queue.NewCircular([]int{}, 1)
 
-		if !circularQueue.IsEmpty() {
-			t.Fatal("expected queue to be empty")
+		if circularQueue.Contains(1) {
+			t.Fatal("expected elem to not be found")
 		}
 	})
+}
 
-	t.Run("Reset", func(t *testing.T) {
-		elems := []int{1, 2, 3, 4}
+func testCircularClear(t *testing.T) {
+	t.Parallel()
 
-		circularQueue := queue.NewCircular(elems, 5)
+	elems := []int{1, 2, 3, 4}
 
-		err := circularQueue.Offer(5)
-		if err != nil {
-			t.Fatalf("expected no error, got %v", err)
-		}
+	circularQueue := queue.NewCircular(elems, 4)
 
-		err = circularQueue.Offer(6)
-		if err != nil {
-			t.Fatalf("expected no error, got %v", err)
-		}
+	_, err := circularQueue.Get()
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
 
-		circularQueue.Reset()
+	queueElems := circularQueue.Clear()
+	expectedElems := []int{2, 3, 4}
 
-		queueElems := circularQueue.Clear()
-		expectedElems := []int{1, 2, 3, 4}
+	if !reflect.DeepEqual(expectedElems, queueElems) {
+		t.Fatalf("expected elements to be %v, got %v", expectedElems, queueElems)
+	}
+}
 
-		if !reflect.DeepEqual(expectedElems, queueElems) {
-			t.Fatalf("expected elements to be %v, got %v", expectedElems, queueElems)
-		}
-	})
+func testCircularIsEmpty(t *testing.T) {
+	circularQueue := queue.NewCircular([]int{}, 1)
 
-	t.Run("Iterator", func(t *testing.T) {
-		elems := []int{1, 2, 3, 4}
+	if !circularQueue.IsEmpty() {
+		t.Fatal("expected queue to be empty")
+	}
+}
 
-		circularQueue := queue.NewCircular(elems, 5)
+func testCircularReset(t *testing.T) {
+	elems := []int{1, 2, 3, 4}
 
-		iterCh := circularQueue.Iterator()
+	circularQueue := queue.NewCircular(elems, 5)
 
-		if !circularQueue.IsEmpty() {
-			t.Fatal("expected queue to be empty")
-		}
+	err := circularQueue.Offer(5)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
 
-		iterElems := make([]int, 0, len(elems))
+	err = circularQueue.Offer(6)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
 
-		for e := range iterCh {
-			iterElems = append(iterElems, e)
-		}
+	circularQueue.Reset()
 
-		if !reflect.DeepEqual(elems, iterElems) {
-			t.Fatalf("expected elements to be %v, got %v", elems, iterElems)
-		}
-	})
+	queueElems := circularQueue.Clear()
+	expectedElems := []int{1, 2, 3, 4}
 
-	t.Run("MarshalJSON", func(t *testing.T) {
+	if !reflect.DeepEqual(expectedElems, queueElems) {
+		t.Fatalf("expected elements to be %v, got %v", expectedElems, queueElems)
+	}
+}
+
+func testCircularIterator(t *testing.T) {
+	elems := []int{1, 2, 3, 4}
+
+	circularQueue := queue.NewCircular(elems, 5)
+
+	iterCh := circularQueue.Iterator()
+
+	if !circularQueue.IsEmpty() {
+		t.Fatal("expected queue to be empty")
+	}
+
+	iterElems := make([]int, 0, len(elems))
+
+	for e := range iterCh {
+		iterElems = append(iterElems, e)
+	}
+
+	if !reflect.DeepEqual(elems, iterElems) {
+		t.Fatalf("expected elements to be %v, got %v", elems, iterElems)
+	}
+}
+
+func testCircularMarshalJSON(t *testing.T) {
+	t.Parallel()
+
+	t.Run("HasElements", func(t *testing.T) {
 		t.Parallel()
 
-		t.Run("HasElements", func(t *testing.T) {
-			t.Parallel()
+		elems := []int{3, 2, 1}
 
-			elems := []int{3, 2, 1}
+		q := queue.NewCircular(elems, 4)
 
-			q := queue.NewCircular(elems, 4)
+		marshaled, err := json.Marshal(q)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
 
-			marshaled, err := json.Marshal(q)
-			if err != nil {
-				t.Fatalf("expected no error, got %v", err)
-			}
+		expectedMarshaled := []byte(`[3,2,1]`)
+		if !bytes.Equal(expectedMarshaled, marshaled) {
+			t.Fatalf("expected marshaled to be %s, got %s", expectedMarshaled, marshaled)
+		}
+	})
 
-			expectedMarshaled := []byte(`[3,2,1]`)
-			if !bytes.Equal(expectedMarshaled, marshaled) {
-				t.Fatalf("expected marshaled to be %s, got %s", expectedMarshaled, marshaled)
-			}
-		})
+	t.Run("Empty", func(t *testing.T) {
+		t.Parallel()
 
-		t.Run("Empty", func(t *testing.T) {
-			t.Parallel()
+		q := queue.NewCircular[int](nil, 1)
 
-			q := queue.NewCircular[int](nil, 1)
+		marshaled, err := json.Marshal(q)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
 
-			marshaled, err := json.Marshal(q)
-			if err != nil {
-				t.Fatalf("expected no error, got %v", err)
-			}
-
-			expectedMarshaled := []byte(`[]`)
-			if !bytes.Equal(expectedMarshaled, marshaled) {
-				t.Fatalf("expected marshaled to be %s, got %s", expectedMarshaled, marshaled)
-			}
-		})
+		expectedMarshaled := []byte(`[]`)
+		if !bytes.Equal(expectedMarshaled, marshaled) {
+			t.Fatalf("expected marshaled to be %s, got %s", expectedMarshaled, marshaled)
+		}
 	})
 }
 
