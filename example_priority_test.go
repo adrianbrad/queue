@@ -1,8 +1,6 @@
 package queue_test
 
 import (
-	"fmt"
-
 	"github.com/adrianbrad/queue"
 )
 
@@ -17,38 +15,7 @@ func ExamplePriority() {
 		queue.WithCapacity(4),
 	)
 
-	containsTwo := priorityQueue.Contains(2)
-	fmt.Println("Contains 2:", containsTwo)
-
-	size := priorityQueue.Size()
-	fmt.Println("Size:", size)
-
-	if err := priorityQueue.Offer(3); err != nil {
-		fmt.Println("Offer err: ", err)
-		return
-	}
-
-	empty := priorityQueue.IsEmpty()
-	fmt.Println("Empty before clear:", empty)
-
-	clearElems := priorityQueue.Clear()
-	fmt.Println("Clear:", clearElems)
-
-	empty = priorityQueue.IsEmpty()
-	fmt.Println("Empty after clear:", empty)
-
-	if err := priorityQueue.Offer(5); err != nil {
-		fmt.Println("Offer err: ", err)
-		return
-	}
-
-	elem, err := priorityQueue.Get()
-	if err != nil {
-		fmt.Println("Get err: ", err)
-		return
-	}
-
-	fmt.Println("Get:", elem)
+	runExampleDemo(priorityQueue)
 
 	// Output:
 	// Contains 2: true
