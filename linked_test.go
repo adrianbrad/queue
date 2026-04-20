@@ -13,153 +13,138 @@ import (
 func TestLinked(t *testing.T) {
 	t.Parallel()
 
-	t.Run("Get", func(t *testing.T) {
+	t.Run("Get", testLinkedGet)
+	t.Run("Peek", testLinkedPeek)
+	t.Run("Offer", testLinkedOffer)
+	t.Run("Contains", testLinkedContains)
+	t.Run("Clear", testLinkedClear)
+	t.Run("IsEmpty", testLinkedIsEmpty)
+	t.Run("Reset", testLinkedReset)
+	t.Run("Iterator", testLinkedIterator)
+	t.Run("MarshalJSON", testLinkedMarshalJSON)
+}
+
+func testLinkedGet(t *testing.T) {
+	t.Parallel()
+
+	t.Run("Success", func(t *testing.T) {
 		t.Parallel()
 
-		t.Run("Success", func(t *testing.T) {
-			t.Parallel()
+		elems := []int{4, 1, 2}
 
-			elems := []int{4, 1, 2}
+		linkedQueue := queue.NewLinked(elems)
 
-			linkedQueue := queue.NewLinked(elems)
+		elem, err := linkedQueue.Get()
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
 
-			elem, err := linkedQueue.Get()
-			if err != nil {
-				t.Fatalf("expected no error, got %v", err)
-			}
+		if elem != 4 {
+			t.Fatalf("expected elem to be 4, got %d", elem)
+		}
 
-			if elem != 4 {
-				t.Fatalf("expected elem to be 4, got %d", elem)
-			}
-
-			if linkedQueue.Size() != 2 {
-				t.Fatalf("expected size to be 2, got %d", linkedQueue.Size())
-			}
-		})
-
-		t.Run("ErrNoElementsAvailable", func(t *testing.T) {
-			t.Parallel()
-
-			var elems []int
-
-			linkedQueue := queue.NewLinked(elems)
-
-			if _, err := linkedQueue.Get(); !errors.Is(err, queue.ErrNoElementsAvailable) {
-				t.Fatalf("expected error to be %v, got %v", queue.ErrNoElementsAvailable, err)
-			}
-		})
+		if linkedQueue.Size() != 2 {
+			t.Fatalf("expected size to be 2, got %d", linkedQueue.Size())
+		}
 	})
 
-	t.Run("Peek", func(t *testing.T) {
+	t.Run("ErrNoElementsAvailable", func(t *testing.T) {
 		t.Parallel()
 
-		t.Run("Success", func(t *testing.T) {
-			t.Parallel()
+		var elems []int
 
-			elems := []int{4, 1, 2}
+		linkedQueue := queue.NewLinked(elems)
 
-			linkedQueue := queue.NewLinked(elems)
-
-			elem, err := linkedQueue.Peek()
-			if err != nil {
-				t.Fatalf("expected no error, got %v", err)
-			}
-
-			if elem != 4 {
-				t.Fatalf("expected elem to be 4, got %d", elem)
-			}
-
-			if linkedQueue.Size() != 3 {
-				t.Fatalf("expected size to be 3, got %d", linkedQueue.Size())
-			}
-		})
-
-		t.Run("ErrNoElementsAvailable", func(t *testing.T) {
-			t.Parallel()
-
-			var elems []int
-
-			linkedQueue := queue.NewLinked(elems)
-
-			if _, err := linkedQueue.Peek(); !errors.Is(err, queue.ErrNoElementsAvailable) {
-				t.Fatalf("expected error to be %v, got %v", queue.ErrNoElementsAvailable, err)
-			}
-		})
+		if _, err := linkedQueue.Get(); !errors.Is(err, queue.ErrNoElementsAvailable) {
+			t.Fatalf("expected error to be %v, got %v", queue.ErrNoElementsAvailable, err)
+		}
 	})
+}
 
-	t.Run("Offer", func(t *testing.T) {
+func testLinkedPeek(t *testing.T) {
+	t.Parallel()
+
+	t.Run("Success", func(t *testing.T) {
 		t.Parallel()
 
-		t.Run("SuccessEmptyQueue", func(t *testing.T) {
-			var elems []int
+		elems := []int{4, 1, 2}
 
-			linkedQueue := queue.NewLinked(elems)
+		linkedQueue := queue.NewLinked(elems)
 
-			err := linkedQueue.Offer(1)
-			if err != nil {
-				t.Fatalf("expected no error, got %v", err)
-			}
+		elem, err := linkedQueue.Peek()
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
 
-			err = linkedQueue.Offer(2)
-			if err != nil {
-				t.Fatalf("expected no error, got %v", err)
-			}
+		if elem != 4 {
+			t.Fatalf("expected elem to be 4, got %d", elem)
+		}
 
-			if linkedQueue.Size() != 2 {
-				t.Fatalf("expected size to be 2, got %d", linkedQueue.Size())
-			}
-
-			queueElems := linkedQueue.Clear()
-			expectedElems := []int{1, 2}
-
-			if !reflect.DeepEqual(expectedElems, queueElems) {
-				t.Fatalf("expected elements to be %v, got %v", expectedElems, queueElems)
-			}
-		})
+		if linkedQueue.Size() != 3 {
+			t.Fatalf("expected size to be 3, got %d", linkedQueue.Size())
+		}
 	})
 
-	t.Run("Contains", func(t *testing.T) {
+	t.Run("ErrNoElementsAvailable", func(t *testing.T) {
 		t.Parallel()
 
-		t.Run("Success", func(t *testing.T) {
-			t.Parallel()
+		var elems []int
 
-			elems := []int{1, 2, 3, 4}
+		linkedQueue := queue.NewLinked(elems)
 
-			linkedQueue := queue.NewLinked(elems)
+		if _, err := linkedQueue.Peek(); !errors.Is(err, queue.ErrNoElementsAvailable) {
+			t.Fatalf("expected error to be %v, got %v", queue.ErrNoElementsAvailable, err)
+		}
+	})
+}
 
-			if !linkedQueue.Contains(2) {
-				t.Fatal("expected elem to be found")
-			}
-		})
+func testLinkedOffer(t *testing.T) {
+	t.Parallel()
 
-		t.Run("NotFoundAfterGet", func(t *testing.T) {
-			t.Parallel()
+	t.Run("SuccessEmptyQueue", func(t *testing.T) {
+		var elems []int
 
-			elems := []int{1, 2, 3, 4}
+		linkedQueue := queue.NewLinked(elems)
 
-			linkedQueue := queue.NewLinked(elems)
+		err := linkedQueue.Offer(1)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
 
-			_, err := linkedQueue.Get()
-			if err != nil {
-				t.Fatalf("expected no error, got %v", err)
-			}
+		err = linkedQueue.Offer(2)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
 
-			if linkedQueue.Contains(1) {
-				t.Fatal("expected elem to not be found")
-			}
-		})
+		if linkedQueue.Size() != 2 {
+			t.Fatalf("expected size to be 2, got %d", linkedQueue.Size())
+		}
 
-		t.Run("EmptyQueue", func(t *testing.T) {
-			linkedQueue := queue.NewLinked([]int{})
+		queueElems := linkedQueue.Clear()
+		expectedElems := []int{1, 2}
 
-			if linkedQueue.Contains(1) {
-				t.Fatal("expected elem to not be found")
-			}
-		})
+		if !reflect.DeepEqual(expectedElems, queueElems) {
+			t.Fatalf("expected elements to be %v, got %v", expectedElems, queueElems)
+		}
+	})
+}
+
+func testLinkedContains(t *testing.T) {
+	t.Parallel()
+
+	t.Run("Success", func(t *testing.T) {
+		t.Parallel()
+
+		elems := []int{1, 2, 3, 4}
+
+		linkedQueue := queue.NewLinked(elems)
+
+		if !linkedQueue.Contains(2) {
+			t.Fatal("expected elem to be found")
+		}
 	})
 
-	t.Run("Clear", func(t *testing.T) {
+	t.Run("NotFoundAfterGet", func(t *testing.T) {
 		t.Parallel()
 
 		elems := []int{1, 2, 3, 4}
@@ -171,86 +156,111 @@ func TestLinked(t *testing.T) {
 			t.Fatalf("expected no error, got %v", err)
 		}
 
-		queueElems := linkedQueue.Clear()
-		expectedElems := []int{2, 3, 4}
-
-		if !reflect.DeepEqual(expectedElems, queueElems) {
-			t.Fatalf("expected elements to be %v, got %v", expectedElems, queueElems)
+		if linkedQueue.Contains(1) {
+			t.Fatal("expected elem to not be found")
 		}
 	})
 
-	t.Run("IsEmpty", func(t *testing.T) {
+	t.Run("EmptyQueue", func(t *testing.T) {
 		linkedQueue := queue.NewLinked([]int{})
 
-		if !linkedQueue.IsEmpty() {
-			t.Fatal("expected queue to be empty")
+		if linkedQueue.Contains(1) {
+			t.Fatal("expected elem to not be found")
 		}
 	})
+}
 
-	t.Run("Reset", func(t *testing.T) {
-		elems := []int{1, 2, 3, 4}
+func testLinkedClear(t *testing.T) {
+	t.Parallel()
 
-		linkedQueue := queue.NewLinked(elems)
+	elems := []int{1, 2, 3, 4}
 
-		err := linkedQueue.Offer(5)
-		if err != nil {
-			t.Fatalf("expected no error, got %v", err)
-		}
+	linkedQueue := queue.NewLinked(elems)
 
-		err = linkedQueue.Offer(6)
-		if err != nil {
-			t.Fatalf("expected no error, got %v", err)
-		}
+	_, err := linkedQueue.Get()
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
 
-		linkedQueue.Reset()
+	queueElems := linkedQueue.Clear()
+	expectedElems := []int{2, 3, 4}
 
-		queueElems := linkedQueue.Clear()
-		expectedElems := []int{1, 2, 3, 4}
+	if !reflect.DeepEqual(expectedElems, queueElems) {
+		t.Fatalf("expected elements to be %v, got %v", expectedElems, queueElems)
+	}
+}
 
-		if !reflect.DeepEqual(expectedElems, queueElems) {
-			t.Fatalf("expected elements to be %v, got %v", expectedElems, queueElems)
-		}
-	})
+func testLinkedIsEmpty(t *testing.T) {
+	linkedQueue := queue.NewLinked([]int{})
 
-	t.Run("Iterator", func(t *testing.T) {
-		elems := []int{1, 2, 3, 4}
+	if !linkedQueue.IsEmpty() {
+		t.Fatal("expected queue to be empty")
+	}
+}
 
-		linkedQueue := queue.NewLinked(elems)
+func testLinkedReset(t *testing.T) {
+	elems := []int{1, 2, 3, 4}
 
-		iterCh := linkedQueue.Iterator()
+	linkedQueue := queue.NewLinked(elems)
 
-		if !linkedQueue.IsEmpty() {
-			t.Fatal("expected queue to be empty")
-		}
+	err := linkedQueue.Offer(5)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
 
-		iterElems := make([]int, 0, len(elems))
+	err = linkedQueue.Offer(6)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
 
-		for e := range iterCh {
-			iterElems = append(iterElems, e)
-		}
+	linkedQueue.Reset()
 
-		if !reflect.DeepEqual(elems, iterElems) {
-			t.Fatalf("expected elements to be %v, got %v", elems, iterElems)
-		}
-	})
+	queueElems := linkedQueue.Clear()
+	expectedElems := []int{1, 2, 3, 4}
 
-	t.Run("MarshalJSON", func(t *testing.T) {
-		t.Parallel()
+	if !reflect.DeepEqual(expectedElems, queueElems) {
+		t.Fatalf("expected elements to be %v, got %v", expectedElems, queueElems)
+	}
+}
 
-		elems := []int{3, 2, 1}
+func testLinkedIterator(t *testing.T) {
+	elems := []int{1, 2, 3, 4}
 
-		q := queue.NewLinked(elems)
+	linkedQueue := queue.NewLinked(elems)
 
-		marshaled, err := json.Marshal(q)
-		if err != nil {
-			t.Fatalf("expected no error, got %v", err)
-		}
+	iterCh := linkedQueue.Iterator()
 
-		expectedMarshaled := []byte(`[3,2,1]`)
-		if !bytes.Equal(expectedMarshaled, marshaled) {
-			t.Fatalf("expected marshaled to be %s, got %s", expectedMarshaled, marshaled)
-		}
-	})
+	if !linkedQueue.IsEmpty() {
+		t.Fatal("expected queue to be empty")
+	}
+
+	iterElems := make([]int, 0, len(elems))
+
+	for e := range iterCh {
+		iterElems = append(iterElems, e)
+	}
+
+	if !reflect.DeepEqual(elems, iterElems) {
+		t.Fatalf("expected elements to be %v, got %v", elems, iterElems)
+	}
+}
+
+func testLinkedMarshalJSON(t *testing.T) {
+	t.Parallel()
+
+	elems := []int{3, 2, 1}
+
+	q := queue.NewLinked(elems)
+
+	marshaled, err := json.Marshal(q)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	expectedMarshaled := []byte(`[3,2,1]`)
+	if !bytes.Equal(expectedMarshaled, marshaled) {
+		t.Fatalf("expected marshaled to be %s, got %s", expectedMarshaled, marshaled)
+	}
 }
 
 func BenchmarkLinkedQueue(b *testing.B) {

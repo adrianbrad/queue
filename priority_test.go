@@ -11,377 +11,387 @@ import (
 	"github.com/adrianbrad/queue"
 )
 
+func lessInt(elem, elemAfter int) bool {
+	return elem < elemAfter
+}
+
 func TestPriority(t *testing.T) {
 	t.Parallel()
 
-	lessAscending := func(elem, elemAfter int) bool {
-		return elem < elemAfter
+	t.Run("NilLessFunc", testPriorityNilLessFunc)
+	t.Run("CapacityLesserThanLenElems", testPriorityCapacityLesserThanLenElems)
+	t.Run("Offer", testPriorityOffer)
+	t.Run("Get", testPriorityGet)
+	t.Run("Clear", testPriorityClear)
+	t.Run("Contains", testPriorityContains)
+	t.Run("Iterator", testPriorityIterator)
+	t.Run("IsEmpty", testPriorityIsEmpty)
+	t.Run("Peek", testPriorityPeek)
+	t.Run("Reset", testPriorityReset)
+	t.Run("MarshalJSON", testPriorityMarshalJSON)
+}
+
+func testPriorityNilLessFunc(t *testing.T) {
+	defer func() {
+		p := recover()
+		if p != "nil less func" {
+			t.Fatalf("expected panic to be 'nil less func', got %v", p)
+		}
+	}()
+
+	queue.NewPriority[any](nil, nil)
+}
+
+func testPriorityCapacityLesserThanLenElems(t *testing.T) {
+	t.Parallel()
+
+	elems := []int{4, 1, 2}
+
+	priorityQueue := queue.NewPriority(elems, lessInt, queue.WithCapacity(2))
+
+	size := priorityQueue.Size()
+
+	if priorityQueue.Size() != 2 {
+		t.Fatalf("expected size to be 2, got %d with elements: %v", size, priorityQueue.Clear())
 	}
 
-	lessInt := func(elem, elemAfter int) bool {
-		return elem < elemAfter
+	elems = priorityQueue.Clear()
+	expectedElems := []int{1, 2}
+
+	if !reflect.DeepEqual([]int{1, 2}, elems) {
+		t.Fatalf("expected elements to be %v, got %v", expectedElems, elems)
 	}
+}
 
-	t.Run("NilLessFunc", func(t *testing.T) {
-		defer func() {
-			p := recover()
-			if p != "nil less func" {
-				t.Fatalf("expected panic to be 'nil less func', got %v", p)
-			}
-		}()
+func testPriorityOffer(t *testing.T) {
+	t.Parallel()
 
-		queue.NewPriority[any](nil, nil)
-	})
-
-	t.Run("CapacityLesserThanLenElems", func(t *testing.T) {
+	t.Run("Success", func(t *testing.T) {
 		t.Parallel()
 
 		elems := []int{4, 1, 2}
 
-		priorityQueue := queue.NewPriority(elems, lessInt, queue.WithCapacity(2))
+		priorityQueue := queue.NewPriority(elems, lessInt)
+
+		if err := priorityQueue.Offer(5); err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
 
 		size := priorityQueue.Size()
 
-		if priorityQueue.Size() != 2 {
-			t.Fatalf("expected size to be 2, got %d with elements: %v", size, priorityQueue.Clear())
+		if size != 4 {
+			t.Fatalf("expected size to be 4, got %d", size)
 		}
 
-		elems = priorityQueue.Clear()
-		expectedElems := []int{1, 2}
+		queueElems := priorityQueue.Clear()
+		expectedElems := []int{1, 2, 4, 5}
 
-		if !reflect.DeepEqual([]int{1, 2}, elems) {
-			t.Fatalf("expected elements to be %v, got %v", expectedElems, elems)
+		if !reflect.DeepEqual(expectedElems, queueElems) {
+			t.Fatalf("expected elements to be %v, got %v", expectedElems, queueElems)
 		}
-	})
 
-	t.Run("Offer", func(t *testing.T) {
-		t.Parallel()
+		newElems := make([]int, 10)
 
-		t.Run("Success", func(t *testing.T) {
-			t.Parallel()
+		for j := 19; j >= 10; j-- {
+			newElems[j%10] = j
 
-			elems := []int{4, 1, 2}
-
-			priorityQueue := queue.NewPriority(elems, lessAscending)
-
-			if err := priorityQueue.Offer(5); err != nil {
+			if err := priorityQueue.Offer(j); err != nil {
 				t.Fatalf("expected no error, got %v", err)
 			}
-
-			size := priorityQueue.Size()
-
-			if size != 4 {
-				t.Fatalf("expected size to be 4, got %d", size)
-			}
-
-			queueElems := priorityQueue.Clear()
-			expectedElems := []int{1, 2, 4, 5}
-
-			if !reflect.DeepEqual(expectedElems, queueElems) {
-				t.Fatalf("expected elements to be %v, got %v", expectedElems, queueElems)
-			}
-
-			newElems := make([]int, 10)
-
-			for j := 19; j >= 10; j-- {
-				newElems[j%10] = j
-
-				if err := priorityQueue.Offer(j); err != nil {
-					t.Fatalf("expected no error, got %v", err)
-				}
-			}
-
-			queueElems = priorityQueue.Clear()
-			if !reflect.DeepEqual(newElems, queueElems) {
-				t.Fatalf("expected elements to be %v, got %v", newElems, queueElems)
-			}
-		})
-
-		t.Run("ErrQueueIsFull", func(t *testing.T) {
-			t.Parallel()
-
-			elems := []int{1}
-
-			priorityQueue := queue.NewPriority(
-				elems, lessAscending,
-				queue.WithCapacity(1),
-			)
-
-			if err := priorityQueue.Offer(2); !errors.Is(err, queue.ErrQueueIsFull) {
-				t.Fatalf("expected error to be %v, got %v", queue.ErrQueueIsFull, err)
-			}
-		})
-	})
-
-	t.Run("Get", func(t *testing.T) {
-		t.Parallel()
-
-		t.Run("Success", func(t *testing.T) {
-			t.Parallel()
-
-			elems := []int{4, 1, 2}
-
-			priorityQueue := queue.NewPriority(elems, lessInt)
-
-			elem, err := priorityQueue.Get()
-			if err != nil {
-				t.Fatalf("expected no error, got %v", err)
-			}
-
-			if elem != 1 {
-				t.Fatalf("expected elem to be 1, got %d", elem)
-			}
-
-			size := priorityQueue.Size()
-
-			if size != 2 {
-				t.Fatalf("expected size to be 2, got %d", size)
-			}
-		})
-
-		t.Run("ErrNoElementsAvailable", func(t *testing.T) {
-			t.Parallel()
-
-			priorityQueue := queue.NewPriority([]int{}, func(_, _ int) bool { return false })
-
-			if _, err := priorityQueue.Get(); !errors.Is(err, queue.ErrNoElementsAvailable) {
-				t.Fatalf("expected error to be %v, got %v", queue.ErrNoElementsAvailable, err)
-			}
-		})
-	})
-
-	t.Run("Clear", func(t *testing.T) {
-		t.Parallel()
-
-		t.Run("Success", func(t *testing.T) {
-			t.Parallel()
-
-			elems := []int{1, 2, 3}
-
-			priorityQueue := queue.NewPriority(elems, lessAscending)
-
-			queueElems := priorityQueue.Clear()
-
-			if !reflect.DeepEqual(elems, queueElems) {
-				t.Fatalf("expected elements to be %v, got %v", elems, queueElems)
-			}
-		})
-
-		t.Run("Empty", func(t *testing.T) {
-			t.Parallel()
-
-			priorityQueue := queue.NewPriority([]int{}, lessAscending)
-
-			queueElems := priorityQueue.Clear()
-
-			if len(queueElems) != 0 {
-				t.Fatalf("expected elements to be empty, got %v", queueElems)
-			}
-		})
-	})
-
-	t.Run("Contains", func(t *testing.T) {
-		t.Parallel()
-
-		t.Run("True", func(t *testing.T) {
-			t.Parallel()
-
-			elems := []int{1, 2, 3}
-
-			priorityQueue := queue.NewPriority(elems, lessAscending)
-
-			if !priorityQueue.Contains(2) {
-				t.Fatal("expected queue to contain 2")
-			}
-		})
-
-		t.Run("False", func(t *testing.T) {
-			t.Parallel()
-
-			elems := []int{1, 2, 3}
-
-			priorityQueue := queue.NewPriority(elems, lessAscending)
-
-			if priorityQueue.Contains(4) {
-				t.Fatal("expected queue to not contain 4")
-			}
-		})
-	})
-
-	t.Run("Iterator", func(t *testing.T) {
-		t.Parallel()
-
-		elems := []int{1, 2, 3}
-
-		priorityQueue := queue.NewPriority(elems, lessAscending)
-
-		iterCh := priorityQueue.Iterator()
-
-		if !priorityQueue.IsEmpty() {
-			t.Fatal("expected queue to be empty")
 		}
 
-		iterElems := make([]int, 0, len(elems))
-
-		for e := range iterCh {
-			iterElems = append(iterElems, e)
-		}
-
-		if !reflect.DeepEqual(elems, iterElems) {
-			t.Fatalf("expected elements to be %v, got %v", elems, iterElems)
+		queueElems = priorityQueue.Clear()
+		if !reflect.DeepEqual(newElems, queueElems) {
+			t.Fatalf("expected elements to be %v, got %v", newElems, queueElems)
 		}
 	})
 
-	t.Run("IsEmpty", func(t *testing.T) {
+	t.Run("ErrQueueIsFull", func(t *testing.T) {
 		t.Parallel()
 
-		t.Run("True", func(t *testing.T) {
-			t.Parallel()
+		elems := []int{1}
 
-			priorityQueue := queue.NewPriority([]int{}, lessAscending)
+		priorityQueue := queue.NewPriority(
+			elems, lessInt,
+			queue.WithCapacity(1),
+		)
 
-			if !priorityQueue.IsEmpty() {
-				t.Fatal("expected queue to be empty")
-			}
-		})
-
-		t.Run("False", func(t *testing.T) {
-			t.Parallel()
-
-			priorityQueue := queue.NewPriority([]int{1}, lessAscending)
-
-			if priorityQueue.IsEmpty() {
-				t.Fatal("expected queue to not be empty")
-			}
-		})
+		if err := priorityQueue.Offer(2); !errors.Is(err, queue.ErrQueueIsFull) {
+			t.Fatalf("expected error to be %v, got %v", queue.ErrQueueIsFull, err)
+		}
 	})
+}
 
-	t.Run("Peek", func(t *testing.T) {
+func testPriorityGet(t *testing.T) {
+	t.Parallel()
+
+	t.Run("Success", func(t *testing.T) {
 		t.Parallel()
 
-		t.Run("Success", func(t *testing.T) {
-			t.Parallel()
+		elems := []int{4, 1, 2}
 
-			elems := []int{4, 1, 2}
+		priorityQueue := queue.NewPriority(elems, lessInt)
 
-			priorityQueue := queue.NewPriority(elems, lessAscending)
-
-			elem, err := priorityQueue.Peek()
-			if err != nil {
-				t.Fatalf("expected no error, got %v", err)
-			}
-
-			size := priorityQueue.Size()
-
-			if size != 3 {
-				t.Fatalf("expected size to be 3, got %d", size)
-			}
-
-			if elem != 1 {
-				t.Fatalf("expected elem to be 1, got %d", elem)
-			}
-
-			elem, err = priorityQueue.Get()
-			if err != nil {
-				t.Fatalf("expected no error, got %v", err)
-			}
-
-			if elem != 1 {
-				t.Fatalf("expected elem to be 1, got %d", elem)
-			}
-
-			elem, err = priorityQueue.Peek()
-			if err != nil {
-				t.Fatalf("expected no error, got %v", err)
-			}
-
-			size = priorityQueue.Size()
-
-			if size != 2 {
-				t.Fatalf("expected size to be 2, got %d", size)
-			}
-
-			if elem != 2 {
-				t.Fatalf("expected elem to be 2, got %d", elem)
-			}
-
-			elem, err = priorityQueue.Get()
-			if err != nil {
-				t.Fatalf("expected no error, got %v", err)
-			}
-
-			if elem != 2 {
-				t.Fatalf("expected elem to be 2, got %d", elem)
-			}
-		})
-
-		t.Run("ErrNoElementsAvailable", func(t *testing.T) {
-			t.Parallel()
-
-			priorityQueue := queue.NewPriority([]int{}, func(_, _ int) bool { return false })
-
-			if _, err := priorityQueue.Peek(); !errors.Is(err, queue.ErrNoElementsAvailable) {
-				t.Fatalf("expected error to be %v, got %v", queue.ErrNoElementsAvailable, err)
-			}
-		})
-	})
-
-	t.Run("Reset", func(t *testing.T) {
-		t.Run("SizeGreaterThanInitialElems", func(t *testing.T) {
-			t.Parallel()
-
-			elems := []int{1}
-
-			priorityQueue := queue.NewPriority(elems, lessAscending)
-
-			err := priorityQueue.Offer(2)
-			if err != nil {
-				t.Fatalf("expected no error, got %v", err)
-			}
-
-			priorityQueue.Reset()
-
-			if priorityQueue.Size() != 1 {
-				t.Fatalf("expected size to be 1, got %d", priorityQueue.Size())
-			}
-		})
-
-		t.Run("SizeLesserThanInitialElems", func(t *testing.T) {
-			t.Parallel()
-
-			elems := []int{1, 2}
-
-			priorityQueue := queue.NewPriority(elems, lessAscending)
-
-			if _, err := priorityQueue.Get(); err != nil {
-				t.Fatalf("expected no error, got %v", err)
-			}
-
-			priorityQueue.Reset()
-
-			if priorityQueue.Size() != 2 {
-				t.Fatalf("expected size to be 2, got %d", priorityQueue.Size())
-			}
-		})
-	})
-
-	t.Run("MarshalJSON", func(t *testing.T) {
-		t.Parallel()
-
-		elems := []int{3, 2, 1}
-
-		priorityQueue := queue.NewPriority(elems, lessAscending)
-
-		marshaled, err := json.Marshal(priorityQueue)
+		elem, err := priorityQueue.Get()
 		if err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
 
-		expectedMarshaled := []byte(`[3,2,1]`)
-		if !bytes.Equal(expectedMarshaled, marshaled) {
-			t.Fatalf("expected marshaled to be %s, got %s", expectedMarshaled, marshaled)
+		if elem != 1 {
+			t.Fatalf("expected elem to be 1, got %d", elem)
+		}
+
+		size := priorityQueue.Size()
+
+		if size != 2 {
+			t.Fatalf("expected size to be 2, got %d", size)
 		}
 	})
+
+	t.Run("ErrNoElementsAvailable", func(t *testing.T) {
+		t.Parallel()
+
+		priorityQueue := queue.NewPriority([]int{}, func(_, _ int) bool { return false })
+
+		if _, err := priorityQueue.Get(); !errors.Is(err, queue.ErrNoElementsAvailable) {
+			t.Fatalf("expected error to be %v, got %v", queue.ErrNoElementsAvailable, err)
+		}
+	})
+}
+
+func testPriorityClear(t *testing.T) {
+	t.Parallel()
+
+	t.Run("Success", func(t *testing.T) {
+		t.Parallel()
+
+		elems := []int{1, 2, 3}
+
+		priorityQueue := queue.NewPriority(elems, lessInt)
+
+		queueElems := priorityQueue.Clear()
+
+		if !reflect.DeepEqual(elems, queueElems) {
+			t.Fatalf("expected elements to be %v, got %v", elems, queueElems)
+		}
+	})
+
+	t.Run("Empty", func(t *testing.T) {
+		t.Parallel()
+
+		priorityQueue := queue.NewPriority([]int{}, lessInt)
+
+		queueElems := priorityQueue.Clear()
+
+		if len(queueElems) != 0 {
+			t.Fatalf("expected elements to be empty, got %v", queueElems)
+		}
+	})
+}
+
+func testPriorityContains(t *testing.T) {
+	t.Parallel()
+
+	t.Run("True", func(t *testing.T) {
+		t.Parallel()
+
+		elems := []int{1, 2, 3}
+
+		priorityQueue := queue.NewPriority(elems, lessInt)
+
+		if !priorityQueue.Contains(2) {
+			t.Fatal("expected queue to contain 2")
+		}
+	})
+
+	t.Run("False", func(t *testing.T) {
+		t.Parallel()
+
+		elems := []int{1, 2, 3}
+
+		priorityQueue := queue.NewPriority(elems, lessInt)
+
+		if priorityQueue.Contains(4) {
+			t.Fatal("expected queue to not contain 4")
+		}
+	})
+}
+
+func testPriorityIterator(t *testing.T) {
+	t.Parallel()
+
+	elems := []int{1, 2, 3}
+
+	priorityQueue := queue.NewPriority(elems, lessInt)
+
+	iterCh := priorityQueue.Iterator()
+
+	if !priorityQueue.IsEmpty() {
+		t.Fatal("expected queue to be empty")
+	}
+
+	iterElems := make([]int, 0, len(elems))
+
+	for e := range iterCh {
+		iterElems = append(iterElems, e)
+	}
+
+	if !reflect.DeepEqual(elems, iterElems) {
+		t.Fatalf("expected elements to be %v, got %v", elems, iterElems)
+	}
+}
+
+func testPriorityIsEmpty(t *testing.T) {
+	t.Parallel()
+
+	t.Run("True", func(t *testing.T) {
+		t.Parallel()
+
+		priorityQueue := queue.NewPriority([]int{}, lessInt)
+
+		if !priorityQueue.IsEmpty() {
+			t.Fatal("expected queue to be empty")
+		}
+	})
+
+	t.Run("False", func(t *testing.T) {
+		t.Parallel()
+
+		priorityQueue := queue.NewPriority([]int{1}, lessInt)
+
+		if priorityQueue.IsEmpty() {
+			t.Fatal("expected queue to not be empty")
+		}
+	})
+}
+
+func testPriorityPeek(t *testing.T) {
+	t.Parallel()
+
+	t.Run("Success", testPriorityPeekSuccess)
+
+	t.Run("ErrNoElementsAvailable", func(t *testing.T) {
+		t.Parallel()
+
+		priorityQueue := queue.NewPriority([]int{}, func(_, _ int) bool { return false })
+
+		if _, err := priorityQueue.Peek(); !errors.Is(err, queue.ErrNoElementsAvailable) {
+			t.Fatalf("expected error to be %v, got %v", queue.ErrNoElementsAvailable, err)
+		}
+	})
+}
+
+func testPriorityPeekSuccess(t *testing.T) {
+	t.Parallel()
+
+	elems := []int{4, 1, 2}
+
+	priorityQueue := queue.NewPriority(elems, lessInt)
+
+	elem, err := priorityQueue.Peek()
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	size := priorityQueue.Size()
+
+	if size != 3 {
+		t.Fatalf("expected size to be 3, got %d", size)
+	}
+
+	if elem != 1 {
+		t.Fatalf("expected elem to be 1, got %d", elem)
+	}
+
+	elem, err = priorityQueue.Get()
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if elem != 1 {
+		t.Fatalf("expected elem to be 1, got %d", elem)
+	}
+
+	elem, err = priorityQueue.Peek()
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	size = priorityQueue.Size()
+
+	if size != 2 {
+		t.Fatalf("expected size to be 2, got %d", size)
+	}
+
+	if elem != 2 {
+		t.Fatalf("expected elem to be 2, got %d", elem)
+	}
+
+	elem, err = priorityQueue.Get()
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if elem != 2 {
+		t.Fatalf("expected elem to be 2, got %d", elem)
+	}
+}
+
+func testPriorityReset(t *testing.T) {
+	t.Run("SizeGreaterThanInitialElems", func(t *testing.T) {
+		t.Parallel()
+
+		elems := []int{1}
+
+		priorityQueue := queue.NewPriority(elems, lessInt)
+
+		err := priorityQueue.Offer(2)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+
+		priorityQueue.Reset()
+
+		if priorityQueue.Size() != 1 {
+			t.Fatalf("expected size to be 1, got %d", priorityQueue.Size())
+		}
+	})
+
+	t.Run("SizeLesserThanInitialElems", func(t *testing.T) {
+		t.Parallel()
+
+		elems := []int{1, 2}
+
+		priorityQueue := queue.NewPriority(elems, lessInt)
+
+		if _, err := priorityQueue.Get(); err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+
+		priorityQueue.Reset()
+
+		if priorityQueue.Size() != 2 {
+			t.Fatalf("expected size to be 2, got %d", priorityQueue.Size())
+		}
+	})
+}
+
+func testPriorityMarshalJSON(t *testing.T) {
+	t.Parallel()
+
+	elems := []int{3, 2, 1}
+
+	priorityQueue := queue.NewPriority(elems, lessInt)
+
+	marshaled, err := json.Marshal(priorityQueue)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	expectedMarshaled := []byte(`[3,2,1]`)
+	if !bytes.Equal(expectedMarshaled, marshaled) {
+		t.Fatalf("expected marshaled to be %s, got %s", expectedMarshaled, marshaled)
+	}
 }
 
 func FuzzPriority(f *testing.F) {

@@ -181,8 +181,6 @@ linters:
           - err113
           - errcheck
           - forcetypeassert
-          - gocognit
-          - gocyclo
           - gosec
           - nilnil
           - varnamelen
