@@ -155,14 +155,7 @@ func (pq *Priority[T]) Reset() {
 	pq.lock.Lock()
 	defer pq.lock.Unlock()
 
-	n := len(pq.initialElements)
-
-	if cap(pq.elements.elems) >= n {
-		pq.elements.elems = pq.elements.elems[:n]
-	} else {
-		pq.elements.elems = make([]T, n)
-	}
-
+	pq.elements.elems = pq.elements.elems[:len(pq.initialElements)]
 	copy(pq.elements.elems, pq.initialElements)
 }
 
