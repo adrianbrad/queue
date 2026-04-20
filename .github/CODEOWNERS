@@ -1,0 +1,7 @@
+# Code owners for this repository.
+#
+# Each line is a file pattern followed by one or more owners.
+# Order matters: the last matching pattern takes the most precedence.
+# See: https://docs.github.com/articles/about-code-owners
+
+* @adrianbrad
