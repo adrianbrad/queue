@@ -120,18 +120,8 @@ func (q *Circular[T]) Clear() []T {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 
-	elems := make([]T, 0, q.size)
+	elems := q.drainQueue()
 
-	for {
-		elem, err := q.get()
-		if err != nil {
-			break
-		}
-
-		elems = append(elems, elem)
-	}
-
-	// clear the queue
 	q.head = 0
 	q.tail = 0
 
@@ -182,7 +172,7 @@ func (q *Circular[T]) Contains(elem T) bool {
 		return false // queue is empty, item not found
 	}
 
-	for i := q.head; i < q.size; i++ {
+	for i := 0; i < q.size; i++ {
 		idx := (q.head + i) % len(q.elems)
 
 		if q.elems[idx] == elem {
@@ -244,10 +234,11 @@ func (q *Circular[T]) isEmpty() bool {
 // It returns a slice containing all elements in their logical order.
 // Note: This method assumes the caller holds an appropriate lock.
 func (q *Circular[T]) drainQueue() []T {
-	// Preallocate the slice with the exact size
-	elems := make([]T, q.size)
+	n := q.size
 
-	for i := 0; i < q.size; i++ {
+	elems := make([]T, n)
+
+	for i := 0; i < n; i++ {
 		elems[i] = q.pop()
 	}
 
