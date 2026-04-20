@@ -39,9 +39,20 @@ jobs:
       - name: Test
         run: make test-ci
 
+      - name: Enforce 100% coverage
+        run: |
+          go tool cover -func=coverage.txt
+          total=$(go tool cover -func=coverage.txt | awk '/^total:/ {print $3}')
+          if [ "$total" != "100.0%" ]; then
+            echo "::error::coverage $total is below required 100.0%"
+            go tool cover -func=coverage.txt | awk '$3 != "100.0%" && NF == 3'
+            exit 1
+          fi
+          echo "coverage: $total"
+
       - name: Upload coverage report
         uses: codecov/codecov-action@v6
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          file: ./coverage.txt
+          files: ./coverage.txt
           flags: unittests
