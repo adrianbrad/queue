@@ -351,6 +351,33 @@ func testBlockingReset(t *testing.T) {
 			t.Fatal("OfferWait was not unblocked by Reset")
 		}
 	})
+
+	t.Run("InitialElemsExceedCapacity", func(t *testing.T) {
+		t.Parallel()
+
+		blockingQueue := queue.NewBlocking(
+			[]int{1, 2, 3, 4, 5},
+			queue.WithCapacity(3),
+		)
+
+		if size := blockingQueue.Size(); size != 3 {
+			t.Fatalf("expected size to be 3 after construction, got %d", size)
+		}
+
+		// Drain the queue then Reset. Reset must honour capacity rather
+		// than restoring the original slice verbatim.
+		_ = blockingQueue.Clear()
+
+		blockingQueue.Reset()
+
+		if size := blockingQueue.Size(); size != 3 {
+			t.Fatalf("expected size to be 3 after Reset, got %d", size)
+		}
+
+		if err := blockingQueue.Offer(99); !errors.Is(err, queue.ErrQueueIsFull) {
+			t.Fatalf("expected ErrQueueIsFull after Reset fills capacity, got %v", err)
+		}
+	})
 }
 
 func testBlockingOfferWait(t *testing.T) {

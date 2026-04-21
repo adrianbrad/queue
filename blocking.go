@@ -40,7 +40,13 @@ func NewBlocking[T comparable](
 		o.apply(&options)
 	}
 
-	// Store initial elements
+	// Trim caller elems to capacity first so initialElems reflects what
+	// actually fits in the queue; otherwise Reset can restore more elements
+	// than the queue is allowed to hold.
+	if options.capacity != nil && len(elems) > *options.capacity {
+		elems = elems[:*options.capacity]
+	}
+
 	initialElems := make([]T, len(elems))
 	copy(initialElems, elems)
 
@@ -53,12 +59,6 @@ func NewBlocking[T comparable](
 
 	queue.notEmptyCond = sync.NewCond(&queue.lock)
 	queue.notFullCond = sync.NewCond(&queue.lock)
-
-	if queue.capacity != nil {
-		if len(queue.elems) > *queue.capacity {
-			queue.elems = queue.elems[:*queue.capacity]
-		}
-	}
 
 	return queue
 }
