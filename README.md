@@ -17,7 +17,7 @@
 
 ---
 
-The `queue` package provides thread-safe generic implementations in Go for the following data structures: `BlockingQueue`, `PriorityQueue`, `CircularQueue` and `Linked Queue`.
+The `queue` package provides thread-safe generic implementations in Go for the following data structures: `BlockingQueue`, `PriorityQueue`, `CircularQueue`, `Linked Queue` and `DelayQueue`.
 
 A queue is a sequence of entities that is open at both ends where the elements are
 added (enqueued) to the tail (back) of the queue and removed (dequeued) from the head (front) of the queue.
@@ -36,6 +36,7 @@ Benchmarks and Example tests can be found in this package.
     * [Priority Queue](#priority-queue)
     * [Circular Queue](#circular-queue)
     * [Linked Queue](#linked-queue)
+    * [Delay Queue](#delay-queue)
   * [Benchmarks](#benchmarks-)
 <!-- TOC -->
 
@@ -267,6 +268,50 @@ func main() {
 }
 ```
 
+### Delay Queue
+
+A `Delay` queue is a priority queue where each element becomes dequeuable at a deadline computed by a caller-supplied function at `Offer` time. `Get` returns `ErrNoElementsAvailable` until the head's deadline has passed; `GetWait` sleeps until it does. Useful for timers, retry scheduling, and TTL expiry.
+
+```go
+package main
+
+import (
+  "fmt"
+  "time"
+
+  "github.com/adrianbrad/queue"
+)
+
+type task struct {
+  id    int
+  runAt time.Time
+}
+
+func main() {
+  now := time.Now()
+
+  delayQueue := queue.NewDelay(
+    []task{
+      {id: 1, runAt: now.Add(20 * time.Millisecond)},
+      {id: 2, runAt: now.Add(5 * time.Millisecond)},
+    },
+    func(t task) time.Time { return t.runAt },
+  )
+
+  size := delayQueue.Size()
+  fmt.Println(size) // 2
+
+  // Non-blocking: not due yet.
+  if _, err := delayQueue.Get(); err != nil {
+    // err == queue.ErrNoElementsAvailable
+  }
+
+  // Blocking: returns as soon as the head's deadline passes.
+  next := delayQueue.GetWait()
+  fmt.Printf("next: %d\n", next.id) // next: 2
+}
+```
+
 ## Benchmarks 
 
 Run locally with `go test -bench=. -benchmem -benchtime=3s -count=3`. Reported numbers are per-operation timings and allocations; absolute values vary by hardware, but the shape (zero-alloc reads everywhere, zero-alloc offer/get for Circular and Linked) should be stable.
@@ -284,4 +329,7 @@ BenchmarkLinkedQueue/Offer                  22.7 ns/op      16 B/op   1 allocs/o
 BenchmarkPriorityQueue/Peek                  3.9 ns/op       0 B/op   0 allocs/op
 BenchmarkPriorityQueue/Get_Offer            18.1 ns/op       0 B/op   0 allocs/op
 BenchmarkPriorityQueue/Offer                17.1 ns/op      48 B/op   0 allocs/op
+BenchmarkDelayQueue/Peek                     4.1 ns/op       0 B/op   0 allocs/op
+BenchmarkDelayQueue/Get_Offer               52.4 ns/op       0 B/op   0 allocs/op
+BenchmarkDelayQueue/Offer                   63.5 ns/op     315 B/op   0 allocs/op
 ```

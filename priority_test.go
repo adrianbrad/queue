@@ -98,8 +98,8 @@ func testPriorityNegativeCapacity(t *testing.T) {
 		}
 
 		msg, ok := p.(string)
-		if !ok || msg != "negative capacity" {
-			t.Fatalf("expected panic 'negative capacity', got %v", p)
+		if !ok || msg != negativeCapacityPanic {
+			t.Fatalf("expected panic %q, got %v", negativeCapacityPanic, p)
 		}
 	}()
 
