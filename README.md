@@ -17,19 +17,25 @@
 
 ---
 
-The `queue` package provides thread-safe generic implementations in Go for the following data structures: `BlockingQueue`, `PriorityQueue`, `CircularQueue`, `Linked Queue` and `DelayQueue`.
+Thread-safe, generic FIFO, priority, circular, linked, and delay queues for Go.
 
-A queue is a sequence of entities that is open at both ends where the elements are
-added (enqueued) to the tail (back) of the queue and removed (dequeued) from the head (front) of the queue.
+## Features
 
-The implementations are designed to be easy-to-use and provide a consistent API, satisfying the `Queue` interface provided by this package. .
+- Five queue flavours behind one `Queue[T comparable]` interface, so you can swap implementations without changing call sites.
+- Generic types with no reflection; zero third-party dependencies.
+- Steady-state zero-alloc reads on every queue and zero-alloc offer/get on `Circular`, `Linked`, `Priority`, and `Delay`.
+- Blocking variants (`OfferWait`, `GetWait`, `PeekWait`) for producer/consumer workloads.
+- `Delay` queue for timers, retry scheduling, and TTL expiry.
+- 100% test coverage and race-tested in CI.
 
-Benchmarks and Example tests can be found in this package. 
+Full API reference at **[pkg.go.dev/github.com/adrianbrad/queue](https://pkg.go.dev/github.com/adrianbrad/queue)**.
 
 <!-- TOC -->
 * [queue](#queue)
+  * [Features](#features)
   * [Installation](#installation)
   * [Import](#import)
+  * [Quick start](#quick-start)
   * [Choosing a queue](#choosing-a-queue)
   * [Usage](#usage)
     * [Queue Interface](#queue-interface)
@@ -38,7 +44,10 @@ Benchmarks and Example tests can be found in this package.
     * [Circular Queue](#circular-queue)
     * [Linked Queue](#linked-queue)
     * [Delay Queue](#delay-queue)
-  * [Benchmarks](#benchmarks-)
+  * [Benchmarks](#benchmarks)
+  * [Contributing](#contributing)
+  * [Security](#security)
+  * [License](#license)
 <!-- TOC -->
 
 ## Installation
@@ -55,15 +64,41 @@ To use this package in your project, you can import it as follows:
 import "github.com/adrianbrad/queue"
 ```
 
+## Quick start
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/adrianbrad/queue"
+)
+
+func main() {
+	q := queue.NewLinked([]int{1, 2, 3})
+
+	_ = q.Offer(4)
+
+	// prints 1, then 2, then 3, then 4 (one per iteration)
+	for !q.IsEmpty() {
+		v, _ := q.Get()
+		fmt.Println(v)
+	}
+}
+```
+
+Every implementation satisfies the same `Queue[T comparable]` interface. Pick a different constructor (`NewBlocking`, `NewPriority`, `NewCircular`, `NewDelay`) without changing the call sites.
+
 ## Choosing a queue
 
 | Queue      | Ordering            | Capacity                                      | Blocks?                                            | Pick this when…                                                                                 |
 |------------|---------------------|-----------------------------------------------|----------------------------------------------------|-------------------------------------------------------------------------------------------------|
-| `Blocking` | FIFO                | Optional; `Offer` errors on full              | Yes — `OfferWait`, `GetWait`, `PeekWait`           | You want a classic producer–consumer queue with backpressure and blocking semantics.            |
-| `Priority` | Custom (less func)  | Optional; `Offer` errors on full              | No                                                 | Order depends on a computed value — smallest deadline, highest score, lexicographic, etc.       |
+| `Blocking` | FIFO                | Optional; `Offer` errors on full              | Yes, via `OfferWait`, `GetWait`, `PeekWait`        | You want a classic producer-consumer queue with backpressure and blocking semantics.            |
+| `Priority` | Custom (less func)  | Optional; `Offer` errors on full              | No                                                 | Order depends on a computed value (smallest deadline, highest score, lexicographic, etc).       |
 | `Circular` | FIFO                | Required; `Offer` **overwrites the oldest**   | No                                                 | You want fixed memory and the most recent N items; dropping older entries is acceptable.        |
 | `Linked`   | FIFO                | None (unbounded)                              | No                                                 | You need an unbounded FIFO and don't want to pick a capacity up front.                          |
-| `Delay`    | By deadline         | Optional; `Offer` errors on full              | `GetWait` sleeps until the head's deadline passes  | Items should become available at a future time — timers, retry scheduling, TTL expiry.          |
+| `Delay`    | By deadline         | Optional; `Offer` errors on full              | `GetWait` sleeps until the head's deadline passes  | Items should become available at a future time (timers, retry scheduling, TTL expiry).          |
 
 ## Usage
 
@@ -105,7 +140,7 @@ type Queue[T comparable] interface {
 
 Blocking queue is a FIFO ordered data structure. Both blocking and non-blocking methods are implemented.
 Blocking methods wait for the queue to have available items when dequeuing, and wait for a slot to become available in case the queue is full when enqueuing.
-The non-blocking methods return an error if an element cannot be added or removed. 
+The non-blocking methods return an error if an element cannot be added or removed.
 Implemented using sync.Cond from the standard library.
 
 ```go
@@ -140,14 +175,14 @@ func main() {
 		// handle err
 	}
 
-	fmt.Println("elem: ", elem) // elem: 2
+	fmt.Printf("elem: %d\n", elem) // elem: 2
 }
 ```
 
 ### Priority Queue
 
-Priority Queue is a data structure where the order of the elements is given by a comparator function provided at construction. 
-Implemented using container/heap standard library package.
+Priority Queue is a data structure where the order of the elements is given by a less function provided at construction.
+Implemented over an internal min-heap.
 
 ```go
 package main
@@ -162,9 +197,9 @@ func main() {
 	elems := []int{2, 3, 4}
 
 	priorityQueue := queue.NewPriority(
-		elems, 
+		elems,
 		func(elem, otherElem int) bool { return elem < otherElem },
-        )
+	)
 
 	containsTwo := priorityQueue.Contains(2)
 	fmt.Println(containsTwo) // true
@@ -204,35 +239,35 @@ then the next element to be removed from the queue will be the element at index 
 package main
 
 import (
-  "fmt"
+	"fmt"
 
-  "github.com/adrianbrad/queue"
+	"github.com/adrianbrad/queue"
 )
 
 func main() {
-  elems := []int{2, 3, 4}
+	elems := []int{2, 3, 4}
 
-  circularQueue := queue.NewCircular(elems, 3)
+	circularQueue := queue.NewCircular(elems, 3)
 
-  containsTwo := circularQueue.Contains(2)
-  fmt.Println(containsTwo) // true
+	containsTwo := circularQueue.Contains(2)
+	fmt.Println(containsTwo) // true
 
-  size := circularQueue.Size()
-  fmt.Println(size) // 3
+	size := circularQueue.Size()
+	fmt.Println(size) // 3
 
-  empty := circularQueue.IsEmpty()
-  fmt.Println(empty) // false
+	empty := circularQueue.IsEmpty()
+	fmt.Println(empty) // false
 
-  if err := circularQueue.Offer(1); err != nil {
-    // handle err
-  }
+	if err := circularQueue.Offer(1); err != nil {
+		// handle err
+	}
 
-  elem, err := circularQueue.Get()
-  if err != nil {
-    // handle err
-  }
+	elem, err := circularQueue.Get()
+	if err != nil {
+		// handle err
+	}
 
-  fmt.Printf("elem: %d\n", elem) // elem: 1
+	fmt.Printf("elem: %d\n", elem) // elem: 1
 }
 ```
 
@@ -247,35 +282,35 @@ without the need for traversal.
 package main
 
 import (
-  "fmt"
+	"fmt"
 
-  "github.com/adrianbrad/queue"
+	"github.com/adrianbrad/queue"
 )
 
 func main() {
-  elems := []int{2, 3, 4}
+	elems := []int{2, 3, 4}
 
-  circularQueue := queue.NewLinked(elems)
+	linkedQueue := queue.NewLinked(elems)
 
-  containsTwo := circularQueue.Contains(2)
-  fmt.Println(containsTwo) // true
+	containsTwo := linkedQueue.Contains(2)
+	fmt.Println(containsTwo) // true
 
-  size := circularQueue.Size()
-  fmt.Println(size) // 3
+	size := linkedQueue.Size()
+	fmt.Println(size) // 3
 
-  empty := circularQueue.IsEmpty()
-  fmt.Println(empty) // false
+	empty := linkedQueue.IsEmpty()
+	fmt.Println(empty) // false
 
-  if err := circularQueue.Offer(1); err != nil {
-    // handle err
-  }
+	if err := linkedQueue.Offer(1); err != nil {
+		// handle err
+	}
 
-  elem, err := circularQueue.Get()
-  if err != nil {
-    // handle err
-  }
+	elem, err := linkedQueue.Get()
+	if err != nil {
+		// handle err
+	}
 
-  fmt.Printf("elem: %d\n", elem) // elem: 2
+	fmt.Printf("elem: %d\n", elem) // elem: 2
 }
 ```
 
@@ -287,45 +322,45 @@ A `Delay` queue is a priority queue where each element becomes dequeuable at a d
 package main
 
 import (
-  "fmt"
-  "time"
+	"fmt"
+	"time"
 
-  "github.com/adrianbrad/queue"
+	"github.com/adrianbrad/queue"
 )
 
 type task struct {
-  id    int
-  runAt time.Time
+	id    int
+	runAt time.Time
 }
 
 func main() {
-  now := time.Now()
+	now := time.Now()
 
-  delayQueue := queue.NewDelay(
-    []task{
-      {id: 1, runAt: now.Add(20 * time.Millisecond)},
-      {id: 2, runAt: now.Add(5 * time.Millisecond)},
-    },
-    func(t task) time.Time { return t.runAt },
-  )
+	delayQueue := queue.NewDelay(
+		[]task{
+			{id: 1, runAt: now.Add(20 * time.Millisecond)},
+			{id: 2, runAt: now.Add(5 * time.Millisecond)},
+		},
+		func(t task) time.Time { return t.runAt },
+	)
 
-  size := delayQueue.Size()
-  fmt.Println(size) // 2
+	size := delayQueue.Size()
+	fmt.Println(size) // 2
 
-  // Non-blocking: not due yet.
-  if _, err := delayQueue.Get(); err != nil {
-    // err == queue.ErrNoElementsAvailable
-  }
+	// Non-blocking: not due yet.
+	if _, err := delayQueue.Get(); err != nil {
+		// err == queue.ErrNoElementsAvailable
+	}
 
-  // Blocking: returns as soon as the head's deadline passes.
-  next := delayQueue.GetWait()
-  fmt.Printf("next: %d\n", next.id) // next: 2
+	// Blocking: returns as soon as the head's deadline passes.
+	next := delayQueue.GetWait()
+	fmt.Printf("next: %d\n", next.id) // next: 2
 }
 ```
 
-## Benchmarks 
+## Benchmarks
 
-Run locally with `go test -bench=. -benchmem -benchtime=3s -count=3`. Reported numbers are per-operation timings and allocations; absolute values vary by hardware, but the shape (zero-alloc reads everywhere, zero-alloc offer/get for Circular and Linked) should be stable.
+Run locally with `go test -bench=. -benchmem -benchtime=3s -count=3`. Reported numbers are per-operation timings and allocations; absolute values vary by hardware, but the shape (zero-alloc reads everywhere, zero-alloc offer/get for Circular, Linked, Priority, and Delay) should be stable.
 
 ```text
 BenchmarkBlockingQueue/Peek                  3.8 ns/op       0 B/op   0 allocs/op
@@ -344,3 +379,15 @@ BenchmarkDelayQueue/Peek                     4.1 ns/op       0 B/op   0 allocs/o
 BenchmarkDelayQueue/Get_Offer               52.4 ns/op       0 B/op   0 allocs/op
 BenchmarkDelayQueue/Offer                   63.5 ns/op     315 B/op   0 allocs/op
 ```
+
+## Contributing
+
+PRs welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow, coding conventions, and the 100% coverage requirement. Ask questions by opening a GitHub issue.
+
+## Security
+
+Please report security issues privately following [SECURITY.md](SECURITY.md) rather than opening a public issue.
+
+## License
+
+MIT. See [LICENSE](LICENSE). Maintained by [@adrianbrad](https://github.com/adrianbrad).
