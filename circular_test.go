@@ -260,28 +260,60 @@ func testCircularIsEmpty(t *testing.T) {
 }
 
 func testCircularReset(t *testing.T) {
-	elems := []int{1, 2, 3, 4}
+	t.Parallel()
 
-	circularQueue := queue.NewCircular(elems, 5)
+	t.Run("Success", func(t *testing.T) {
+		t.Parallel()
 
-	err := circularQueue.Offer(5)
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
+		elems := []int{1, 2, 3, 4}
 
-	err = circularQueue.Offer(6)
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
+		circularQueue := queue.NewCircular(elems, 5)
 
-	circularQueue.Reset()
+		err := circularQueue.Offer(5)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
 
-	queueElems := circularQueue.Clear()
-	expectedElems := []int{1, 2, 3, 4}
+		err = circularQueue.Offer(6)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
 
-	if !reflect.DeepEqual(expectedElems, queueElems) {
-		t.Fatalf("expected elements to be %v, got %v", expectedElems, queueElems)
-	}
+		circularQueue.Reset()
+
+		queueElems := circularQueue.Clear()
+		expectedElems := []int{1, 2, 3, 4}
+
+		if !reflect.DeepEqual(expectedElems, queueElems) {
+			t.Fatalf("expected elements to be %v, got %v", expectedElems, queueElems)
+		}
+	})
+
+	t.Run("InitialElemsExceedCapacity", func(t *testing.T) {
+		t.Parallel()
+
+		// Capacity is 3 but 5 elements are provided. NewCircular trims the
+		// live queue but keeps all 5 as the reset target, so Reset ends up
+		// restoring size=5 on a backing array of length 3.
+		circularQueue := queue.NewCircular([]int{1, 2, 3, 4, 5}, 3)
+
+		if size := circularQueue.Size(); size != 3 {
+			t.Fatalf("expected size to be 3 after construction, got %d", size)
+		}
+
+		circularQueue.Reset()
+
+		if size := circularQueue.Size(); size != 3 {
+			t.Fatalf("expected size to be 3 after Reset, got %d", size)
+		}
+
+		queueElems := circularQueue.Clear()
+		expectedElems := []int{1, 2, 3}
+
+		if !reflect.DeepEqual(expectedElems, queueElems) {
+			t.Fatalf("expected elements to be %v, got %v", expectedElems, queueElems)
+		}
+	})
 }
 
 func testCircularIterator(t *testing.T) {
