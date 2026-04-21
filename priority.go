@@ -286,7 +286,7 @@ func (pq *Priority[T]) MarshalJSON() ([]byte, error) {
 
 	for tempHeap.Len() > 0 {
 		// nolint: forcetypeassert, revive
-		output[i] = tempHeap.Pop().(T)
+		output[i] = heap.Pop(tempHeap).(T)
 		i++
 	}
 
