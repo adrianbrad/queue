@@ -48,7 +48,14 @@ func NewCircular[T comparable](
 
 	copy(elems, givenElems)
 
-	initialElems := make([]T, len(givenElems))
+	// Cap initialElems at capacity so Reset cannot restore a size larger
+	// than the backing array can hold.
+	initialLen := len(givenElems)
+	if initialLen > *options.capacity {
+		initialLen = *options.capacity
+	}
+
+	initialElems := make([]T, initialLen)
 
 	copy(initialElems, givenElems)
 
