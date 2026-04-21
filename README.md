@@ -9,7 +9,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/adrianbrad/queue)](https://goreportcard.com/report/github.com/adrianbrad/queue)
 [![codecov](https://codecov.io/gh/adrianbrad/queue/branch/main/graph/badge.svg)](https://codecov.io/gh/adrianbrad/queue)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/adrianbrad/queue/badge)](https://scorecard.dev/viewer/?uri=github.com/adrianbrad/queue)
-[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/12607/badge)](https://www.bestpractices.dev/projects/12607)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/12607/badge?v=1)](https://www.bestpractices.dev/projects/12607)
 
 [![lint-test](https://github.com/adrianbrad/queue/actions/workflows/lint-test.yaml/badge.svg)](https://github.com/adrianbrad/queue/actions?query=workflow%3Alint-test)
 [![grype](https://github.com/adrianbrad/queue/actions/workflows/grype.yaml/badge.svg)](https://github.com/adrianbrad/queue/actions?query=workflow%3Agrype)
