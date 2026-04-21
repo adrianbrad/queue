@@ -1,3 +1,30 @@
+## v1.6.0 (2026-04-21)
+
+### Fix
+
+- **priority**: `MarshalJSON` now emits elements in priority order (was: arbitrary heap-array order)
+- **blocking**: `Reset` honours capacity instead of restoring the untrimmed initial slice
+- **blocking**: `Reset` broadcasts `notFullCond` so producers blocked in `OfferWait` wake
+- **blocking**: `NewBlocking` copies the caller's slice instead of aliasing it
+- **blocking**: `Get` and `Clear` zero popped slots so pointer `T` no longer leaks via the backing array
+- **blocking**: producers `Broadcast` instead of `Signal`; drop the fragile `PeekWait` cascade
+- **circular**: `Reset` honours capacity when `len(initial) > capacity` (was: corrupt size)
+- **circular**: `Reset` zeros slots past the initial set so pointer `T` is reclaimable
+- **priority**: `Reset` allocates a fresh backing slice instead of leaking past the new length
+- Validate capacity at construction; panic with a clear message on `<= 0` (Circular) / `< 0` (Priority)
+
+### Perf
+
+- **linked**: internal free list recycles popped nodes; steady-state offer/get drops to 0 allocs
+- **circular**: `Contains` and `MarshalJSON` walk in two contiguous chunks instead of per-element modulo
+- **priority**: `MarshalJSON` sorts a copy with `sort.Slice` instead of `heap.Init` + N `heap.Pop`
+
+### Docs / refactor
+
+- Refresh README benchmarks
+- Fix stale package overview ("2 implementations" → 4) and copy-paste comment typos
+- `Linked.Iterator` holds the lock for the whole call (consistency with other queues)
+
 ## v1.5.0 (2026-04-20)
 
 ### Fix
