@@ -379,7 +379,11 @@ func testPriorityReset(t *testing.T) {
 func testPriorityMarshalJSON(t *testing.T) {
 	t.Parallel()
 
-	elems := []int{3, 2, 1}
+	// Use an unsorted input large enough that the heap's internal layout
+	// differs from priority-sorted order. For a min-heap over
+	// [5, 3, 1, 4, 2] with less=<, heap.Init produces [1, 2, 4, 5, 3];
+	// draining via heap.Pop must yield [1, 2, 3, 4, 5].
+	elems := []int{5, 3, 1, 4, 2}
 
 	priorityQueue := queue.NewPriority(elems, lessInt)
 
@@ -388,7 +392,7 @@ func testPriorityMarshalJSON(t *testing.T) {
 		t.Fatalf("expected no error, got %v", err)
 	}
 
-	expectedMarshaled := []byte(`[3,2,1]`)
+	expectedMarshaled := []byte(`[1,2,3,4,5]`)
 	if !bytes.Equal(expectedMarshaled, marshaled) {
 		t.Fatalf("expected marshaled to be %s, got %s", expectedMarshaled, marshaled)
 	}
