@@ -23,7 +23,15 @@ type Linked[T comparable] struct {
 	initialElements []T // initial elements with which the queue was created, allowing for a reset to its original state if needed.
 	// synchronization
 	lock sync.RWMutex
+	// free is a stack of recycled nodes. Offer pulls from here before
+	// allocating; Get pushes onto it. Bounded to freeCap so Clear/Reset
+	// can't cause unbounded retention.
+	free    *node[T]
+	freeLen int
 }
+
+// freeCap is the maximum number of nodes cached for reuse.
+const freeCap = 64
 
 // NewLinked creates a new Linked containing the given elements.
 func NewLinked[T comparable](elements []T) *Linked[T] {
@@ -52,13 +60,17 @@ func (lq *Linked[T]) Get() (elem T, _ error) {
 		return elem, ErrNoElementsAvailable
 	}
 
-	value := lq.head.value
-	lq.head = lq.head.next
+	popped := lq.head
+	value := popped.value
+
+	lq.head = popped.next
 	lq.size--
 
 	if lq.isEmpty() {
 		lq.tail = nil
 	}
+
+	lq.recycle(popped)
 
 	return value, nil
 }
@@ -73,7 +85,8 @@ func (lq *Linked[T]) Offer(value T) error {
 
 // offer inserts the element into the queue.
 func (lq *Linked[T]) offer(value T) error {
-	newNode := &node[T]{value: value}
+	newNode := lq.acquireNode()
+	newNode.value = value
 
 	if lq.isEmpty() {
 		lq.head = newNode
@@ -85,6 +98,35 @@ func (lq *Linked[T]) offer(value T) error {
 	lq.size++
 
 	return nil
+}
+
+// acquireNode pulls a node off the free list or allocates a fresh one.
+func (lq *Linked[T]) acquireNode() *node[T] {
+	if lq.free == nil {
+		return &node[T]{}
+	}
+
+	n := lq.free
+	lq.free = n.next
+	lq.freeLen--
+	n.next = nil
+
+	return n
+}
+
+// recycle zeroes a popped node and returns it to the free list, capped
+// at freeCap to avoid pinning memory after a large drain.
+func (lq *Linked[T]) recycle(n *node[T]) {
+	if lq.freeLen >= freeCap {
+		return
+	}
+
+	var zero T
+
+	n.value = zero
+	n.next = lq.free
+	lq.free = n
+	lq.freeLen++
 }
 
 // Reset sets the queue to its initial state.
