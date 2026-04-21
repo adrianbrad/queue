@@ -107,6 +107,7 @@ func (bq *Blocking[T]) Reset() {
 	copy(bq.elems, bq.initialElems)
 
 	bq.notEmptyCond.Broadcast()
+	bq.notFullCond.Broadcast()
 }
 
 // ===================================Removal==================================
