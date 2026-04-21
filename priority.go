@@ -159,7 +159,11 @@ func (pq *Priority[T]) Reset() {
 	pq.lock.Lock()
 	defer pq.lock.Unlock()
 
-	pq.elements.elems = pq.elements.elems[:len(pq.initialElements)]
+	// Allocate a fresh backing slice so any references past the new length
+	// (leftover from Offer/Pop growth) are released with the old array.
+	// initialElements was captured after heap.Init in the constructor, so
+	// copying it back preserves the heap invariant without a re-Init.
+	pq.elements.elems = make([]T, len(pq.initialElements))
 	copy(pq.elements.elems, pq.initialElements)
 }
 
