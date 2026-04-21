@@ -31,6 +31,28 @@ func TestBlocking(t *testing.T) {
 	t.Run("WithCapacity", testBlockingWithCapacity)
 	t.Run("CondWaitWithCapacity", testBlockingCondWaitWithCapacity)
 	t.Run("MarshalJSON", testBlockingMarshalJSON)
+	t.Run("NewDoesNotAliasCallerSlice", testBlockingNewDoesNotAliasCallerSlice)
+}
+
+func testBlockingNewDoesNotAliasCallerSlice(t *testing.T) {
+	t.Parallel()
+
+	callerSlice := []int{10, 20, 30}
+
+	blockingQueue := queue.NewBlocking(callerSlice)
+
+	// Mutating the caller's slice after construction must not leak
+	// into the queue's state.
+	callerSlice[0] = 999
+
+	peek, err := blockingQueue.Peek()
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if peek != 10 {
+		t.Fatalf("expected peek to be 10 (isolated), got %d", peek)
+	}
 }
 
 func testBlockingConsistency(t *testing.T) {
