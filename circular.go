@@ -107,6 +107,15 @@ func (q *Circular[T]) Reset() {
 
 	copy(q.elems, q.initialElements)
 
+	// Drop references in any slot past the initial set; otherwise pointer
+	// T stays reachable via the backing array until a future Offer
+	// overwrites each slot.
+	var zero T
+
+	for i := len(q.initialElements); i < len(q.elems); i++ {
+		q.elems[i] = zero
+	}
+
 	q.head = 0
 	q.tail = 0
 	q.size = len(q.initialElements)
