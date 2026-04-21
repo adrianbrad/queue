@@ -35,6 +35,61 @@ func TestBlocking(t *testing.T) {
 	t.Run("NewDoesNotAliasCallerSlice", testBlockingNewDoesNotAliasCallerSlice)
 	t.Run("GetReleasesReference", testBlockingGetReleasesReference)
 	t.Run("ClearReleasesReferences", testBlockingClearReleasesReferences)
+	t.Run("OfferBroadcastsToAllWaiters", testBlockingOfferBroadcastsToAllWaiters)
+}
+
+// testBlockingOfferBroadcastsToAllWaiters documents that a single Offer
+// wakes every PeekWait waiter, not just one — so PeekWait does not need to
+// re-signal notEmptyCond to propagate wake-ups through a chain of peekers.
+// Regression guard for the cascade removal.
+func testBlockingOfferBroadcastsToAllWaiters(t *testing.T) {
+	t.Parallel()
+
+	const peekers = 10
+
+	blockingQueue := queue.NewBlocking[int](nil)
+
+	var wg sync.WaitGroup
+
+	wg.Add(peekers)
+
+	results := make(chan int, peekers)
+
+	for i := 0; i < peekers; i++ {
+		go func() {
+			defer wg.Done()
+
+			results <- blockingQueue.PeekWait()
+		}()
+	}
+
+	// Give the peekers a chance to enter Wait().
+	time.Sleep(50 * time.Millisecond)
+
+	if err := blockingQueue.Offer(42); err != nil {
+		t.Fatalf("offer: %v", err)
+	}
+
+	done := make(chan struct{})
+
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		t.Fatal("not every peeker was woken by a single Offer")
+	}
+
+	close(results)
+
+	for v := range results {
+		if v != 42 {
+			t.Fatalf("peek got %d want 42", v)
+		}
+	}
 }
 
 func testBlockingGetReleasesReference(t *testing.T) {

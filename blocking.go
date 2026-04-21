@@ -82,7 +82,10 @@ func (bq *Blocking[T]) OfferWait(elem T) {
 
 	bq.elems = append(bq.elems, elem)
 
-	bq.notEmptyCond.Signal()
+	// Broadcast so any mix of GetWait / PeekWait waiters re-check.
+	// Signal would only wake one, requiring a cascade hack in PeekWait
+	// to forward the wake-up.
+	bq.notEmptyCond.Broadcast()
 }
 
 // Offer inserts the element to the tail the queue.
@@ -97,7 +100,7 @@ func (bq *Blocking[T]) Offer(elem T) error {
 
 	bq.elems = append(bq.elems, elem)
 
-	bq.notEmptyCond.Signal()
+	bq.notEmptyCond.Broadcast()
 
 	return nil
 }
@@ -128,10 +131,13 @@ func (bq *Blocking[T]) GetWait() (v T) {
 		bq.notEmptyCond.Wait()
 	}
 
+	var zero T
+
 	elem := bq.elems[0]
+	bq.elems[0] = zero
 	bq.elems = bq.elems[1:]
 
-	bq.notFullCond.Signal()
+	bq.notFullCond.Broadcast()
 
 	return elem
 }
@@ -219,12 +225,9 @@ func (bq *Blocking[T]) PeekWait() T {
 		bq.notEmptyCond.Wait()
 	}
 
-	elem := bq.elems[0]
-
-	// send the not empty signal again in case any remove method waits.
-	bq.notEmptyCond.Signal()
-
-	return elem
+	// No cascade Signal here: producers now Broadcast, so every waiter
+	// already re-checks its predicate.
+	return bq.elems[0]
 }
 
 // Size returns the number of elements in the queue.
@@ -292,7 +295,7 @@ func (bq *Blocking[T]) get() (v T, _ error) {
 	bq.elems[0] = zero
 	bq.elems = bq.elems[1:]
 
-	bq.notFullCond.Signal()
+	bq.notFullCond.Broadcast()
 
 	return elem, nil
 }
