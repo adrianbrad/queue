@@ -24,6 +24,41 @@ func TestCircular(t *testing.T) {
 	t.Run("Reset", testCircularReset)
 	t.Run("Iterator", testCircularIterator)
 	t.Run("MarshalJSON", testCircularMarshalJSON)
+	t.Run("NonPositiveCapacity", testCircularNonPositiveCapacity)
+}
+
+func testCircularNonPositiveCapacity(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name     string
+		capacity int
+	}{
+		{name: "Zero", capacity: 0},
+		{name: "Negative", capacity: -1},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			defer func() {
+				p := recover()
+				if p == nil {
+					t.Fatalf("expected panic for capacity %d", tc.capacity)
+				}
+
+				msg, ok := p.(string)
+				if !ok || msg != "capacity must be positive" {
+					t.Fatalf("expected panic 'capacity must be positive', got %v", p)
+				}
+			}()
+
+			_ = queue.NewCircular[int](nil, tc.capacity)
+		})
+	}
 }
 
 func testCircularCapacityOptionOverwrites(t *testing.T) {
