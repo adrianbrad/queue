@@ -188,7 +188,7 @@ func (lq *Linked[T]) IsEmpty() bool {
 	return lq.isEmpty()
 }
 
-// IsEmpty returns true if the queue is empty, false otherwise.
+// isEmpty returns true if the queue is empty, false otherwise.
 func (lq *Linked[T]) isEmpty() bool {
 	return lq.size == 0
 }

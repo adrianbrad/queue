@@ -5,7 +5,7 @@ import (
 	"sync"
 )
 
-// Ensure Priority implements the Queue interface.
+// Ensure Circular implements the Queue interface.
 var _ Queue[any] = (*Circular[any])(nil)
 
 // Circular is a Queue implementation.
