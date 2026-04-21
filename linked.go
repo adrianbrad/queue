@@ -196,7 +196,10 @@ func (lq *Linked[T]) isEmpty() bool {
 // Iterator returns a channel that will be filled with the elements.
 // It removes the elements from the queue.
 func (lq *Linked[T]) Iterator() <-chan T {
-	elems := lq.Clear()
+	lq.lock.Lock()
+	defer lq.lock.Unlock()
+
+	elems := lq.drainLocked()
 
 	ch := make(chan T, len(elems))
 
@@ -214,6 +217,12 @@ func (lq *Linked[T]) Clear() []T {
 	lq.lock.Lock()
 	defer lq.lock.Unlock()
 
+	return lq.drainLocked()
+}
+
+// drainLocked collects all elements in order and resets the queue.
+// Caller must hold the write lock.
+func (lq *Linked[T]) drainLocked() []T {
 	elements := make([]T, lq.size)
 
 	current := lq.head
