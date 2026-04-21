@@ -311,6 +311,46 @@ func testBlockingReset(t *testing.T) {
 			t.Fatalf("expected elem to be %d, got %d", 5, e)
 		}
 	})
+
+	t.Run("UnblocksProducersWaitingOnCapacity", func(t *testing.T) {
+		t.Parallel()
+
+		// Start with fewer elements than capacity so Reset frees a slot.
+		blockingQueue := queue.NewBlocking(
+			[]int{1, 2},
+			queue.WithCapacity(3),
+		)
+
+		if err := blockingQueue.Offer(3); err != nil {
+			t.Fatalf("unexpected err filling queue: %v", err)
+		}
+
+		offerReturned := make(chan struct{})
+
+		go func() {
+			blockingQueue.OfferWait(4)
+			close(offerReturned)
+		}()
+
+		// Give the producer a moment to enter notFullCond.Wait().
+		time.Sleep(10 * time.Millisecond)
+
+		select {
+		case <-offerReturned:
+			t.Fatal("OfferWait returned before Reset; queue was full")
+		default:
+		}
+
+		// Reset shrinks back to the initial two elements, leaving a free slot.
+		// Without broadcasting notFullCond, the producer never wakes.
+		blockingQueue.Reset()
+
+		select {
+		case <-offerReturned:
+		case <-time.After(time.Second):
+			t.Fatal("OfferWait was not unblocked by Reset")
+		}
+	})
 }
 
 func testBlockingOfferWait(t *testing.T) {
