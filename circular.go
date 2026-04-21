@@ -44,6 +44,10 @@ func NewCircular[T comparable](
 		o.apply(&options)
 	}
 
+	if *options.capacity <= 0 {
+		panic("capacity must be positive")
+	}
+
 	elems := make([]T, *options.capacity)
 
 	copy(elems, givenElems)

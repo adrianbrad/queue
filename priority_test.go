@@ -29,6 +29,25 @@ func TestPriority(t *testing.T) {
 	t.Run("Peek", testPriorityPeek)
 	t.Run("Reset", testPriorityReset)
 	t.Run("MarshalJSON", testPriorityMarshalJSON)
+	t.Run("NegativeCapacity", testPriorityNegativeCapacity)
+}
+
+func testPriorityNegativeCapacity(t *testing.T) {
+	t.Parallel()
+
+	defer func() {
+		p := recover()
+		if p == nil {
+			t.Fatal("expected panic for negative capacity")
+		}
+
+		msg, ok := p.(string)
+		if !ok || msg != "negative capacity" {
+			t.Fatalf("expected panic 'negative capacity', got %v", p)
+		}
+	}()
+
+	_ = queue.NewPriority([]int{1, 2}, lessInt, queue.WithCapacity(-1))
 }
 
 func testPriorityNilLessFunc(t *testing.T) {
