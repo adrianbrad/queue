@@ -288,8 +288,8 @@ func (bq *Blocking[T]) get() (v T, _ error) {
 	// popped element; otherwise pointer T leaks until the slice eventually
 	// reallocates.
 	var zero T
-	bq.elems[0] = zero
 
+	bq.elems[0] = zero
 	bq.elems = bq.elems[1:]
 
 	bq.notFullCond.Signal()

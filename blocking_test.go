@@ -76,7 +76,7 @@ func testBlockingGetReleasesReference(t *testing.T) {
 	deadline := time.After(time.Second)
 
 	for {
-		runtime.GC()
+		runtime.GC() //nolint:revive // explicit GC needed to drive finalizer
 
 		select {
 		case <-finalized:
@@ -129,7 +129,7 @@ func testBlockingClearReleasesReferences(t *testing.T) {
 
 	count := 0
 	for count < 3 {
-		runtime.GC()
+		runtime.GC() //nolint:revive // explicit GC needed to drive finalizer
 
 		select {
 		case <-finalized:
