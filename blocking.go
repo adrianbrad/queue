@@ -47,11 +47,16 @@ func NewBlocking[T comparable](
 		elems = elems[:*options.capacity]
 	}
 
+	// Copy into an owned backing slice so caller mutations don't leak
+	// into queue state, matching NewCircular / NewLinked / NewPriority.
+	ownedElems := make([]T, len(elems))
+	copy(ownedElems, elems)
+
 	initialElems := make([]T, len(elems))
 	copy(initialElems, elems)
 
 	queue := &Blocking[T]{
-		elems:        elems,
+		elems:        ownedElems,
 		initialElems: initialElems,
 		capacity:     options.capacity,
 		lock:         sync.RWMutex{},
