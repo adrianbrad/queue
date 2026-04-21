@@ -1,3 +1,14 @@
+## v1.7.0 (2026-04-21)
+
+### Feat
+
+- **delay**: new `Delay[T comparable]` queue. Elements become dequeuable at a deadline computed by a caller-supplied function at `Offer` time; `Get` errors until the head is due, `GetWait` sleeps until it is. Built on a typed min-heap by deadline; zero-alloc steady-state offer/get.
+
+### Docs
+
+- README: add a "Choosing a queue" decision table, a Quick start snippet, a Features bullet list, a prominent pkg.go.dev link, and Contributing / Security / License sections.
+- README: fix inconsistencies across the per-queue examples (variable naming, indentation, `Println` vs `Printf`).
+
 ## v1.6.0 (2026-04-21)
 
 ### Fix
