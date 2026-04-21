@@ -281,7 +281,6 @@ BenchmarkCircularQueue/Offer                 6.5 ns/op       0 B/op   0 allocs/o
 BenchmarkLinkedQueue/Peek                    3.9 ns/op       0 B/op   0 allocs/op
 BenchmarkLinkedQueue/Get_Offer              14.7 ns/op       0 B/op   0 allocs/op
 BenchmarkLinkedQueue/Offer                  22.7 ns/op      16 B/op   1 allocs/op
-BenchmarkPriorityQueue/MarshalJSON         191.5 ns/op     168 B/op   5 allocs/op
 BenchmarkPriorityQueue/Peek                  3.9 ns/op       0 B/op   0 allocs/op
 BenchmarkPriorityQueue/Get_Offer            18.1 ns/op       0 B/op   0 allocs/op
 BenchmarkPriorityQueue/Offer                17.1 ns/op      48 B/op   0 allocs/op
