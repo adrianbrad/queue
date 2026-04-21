@@ -98,6 +98,10 @@ func NewPriority[T comparable](
 		o.apply(&options)
 	}
 
+	if options.capacity != nil && *options.capacity < 0 {
+		panic("negative capacity")
+	}
+
 	heapElems := make([]T, len(elems))
 
 	copy(heapElems, elems)
