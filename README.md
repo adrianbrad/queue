@@ -30,6 +30,7 @@ Benchmarks and Example tests can be found in this package.
 * [queue](#queue)
   * [Installation](#installation)
   * [Import](#import)
+  * [Choosing a queue](#choosing-a-queue)
   * [Usage](#usage)
     * [Queue Interface](#queue-interface)
     * [Blocking Queue](#blocking-queue)
@@ -53,6 +54,16 @@ To use this package in your project, you can import it as follows:
 ```go
 import "github.com/adrianbrad/queue"
 ```
+
+## Choosing a queue
+
+| Queue      | Ordering            | Capacity                                      | Blocks?                                            | Pick this when…                                                                                 |
+|------------|---------------------|-----------------------------------------------|----------------------------------------------------|-------------------------------------------------------------------------------------------------|
+| `Blocking` | FIFO                | Optional; `Offer` errors on full              | Yes — `OfferWait`, `GetWait`, `PeekWait`           | You want a classic producer–consumer queue with backpressure and blocking semantics.            |
+| `Priority` | Custom (less func)  | Optional; `Offer` errors on full              | No                                                 | Order depends on a computed value — smallest deadline, highest score, lexicographic, etc.       |
+| `Circular` | FIFO                | Required; `Offer` **overwrites the oldest**   | No                                                 | You want fixed memory and the most recent N items; dropping older entries is acceptable.        |
+| `Linked`   | FIFO                | None (unbounded)                              | No                                                 | You need an unbounded FIFO and don't want to pick a capacity up front.                          |
+| `Delay`    | By deadline         | Optional; `Offer` errors on full              | `GetWait` sleeps until the head's deadline passes  | Items should become available at a future time — timers, retry scheduling, TTL expiry.          |
 
 ## Usage
 
