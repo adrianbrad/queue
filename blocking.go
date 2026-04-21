@@ -181,7 +181,7 @@ func (bq *Blocking[T]) Iterator() <-chan T {
 	defer bq.lock.Unlock()
 
 	// use a buffered channel to avoid blocking the iterator.
-	iteratorCh := make(chan T, bq.size())
+	iteratorCh := make(chan T, len(bq.elems))
 
 	// close the channel when the function returns.
 	defer close(iteratorCh)
@@ -274,10 +274,6 @@ func (bq *Blocking[T]) isFull() bool {
 	}
 
 	return len(bq.elems) >= *bq.capacity
-}
-
-func (bq *Blocking[T]) size() int {
-	return len(bq.elems)
 }
 
 func (bq *Blocking[T]) get() (v T, _ error) {

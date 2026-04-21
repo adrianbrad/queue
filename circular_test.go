@@ -316,6 +316,37 @@ func testCircularContains(t *testing.T) {
 			t.Fatal("expected elem to not be found")
 		}
 	})
+
+	t.Run("WrapsAroundBackingArray", func(t *testing.T) {
+		t.Parallel()
+
+		// Force the queue to span the array's wrap point so Contains
+		// has to walk both the head..end and 0..tail chunks.
+		circularQueue := queue.NewCircular([]int{1, 2, 3, 4}, 4)
+
+		// Pop two from the head, push two new at the tail. Logical
+		// queue is now [3, 4, 5, 6] but the backing array is
+		// [5, 6, 3, 4] with head=2, tail=2.
+		_, _ = circularQueue.Get()
+		_, _ = circularQueue.Get()
+
+		if err := circularQueue.Offer(5); err != nil {
+			t.Fatalf("offer 5: %v", err)
+		}
+
+		if err := circularQueue.Offer(6); err != nil {
+			t.Fatalf("offer 6: %v", err)
+		}
+
+		// 4 lives in the head chunk, 5 lives in the wrapped chunk.
+		if !circularQueue.Contains(4) {
+			t.Fatal("expected to find 4 in the head chunk")
+		}
+
+		if !circularQueue.Contains(5) {
+			t.Fatal("expected to find 5 in the wrapped chunk")
+		}
+	})
 }
 
 func testCircularClear(t *testing.T) {

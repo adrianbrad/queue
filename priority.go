@@ -272,31 +272,21 @@ func (pq *Priority[T]) Size() int {
 	return pq.elements.Len()
 }
 
-// MarshalJSON serializes the Priority queue to JSON.
+// MarshalJSON serializes the Priority queue to JSON in priority order.
 func (pq *Priority[T]) MarshalJSON() ([]byte, error) {
 	pq.lock.RLock()
 
-	// Create a temporary copy of the heap to extract elements in order.
-	tempHeap := &priorityHeap[T]{
-		elems:    make([]T, len(pq.elements.elems)),
-		lessFunc: pq.elements.lessFunc,
-	}
-
-	copy(tempHeap.elems, pq.elements.elems)
+	output := make([]T, len(pq.elements.elems))
+	copy(output, pq.elements.elems)
+	lessFunc := pq.elements.lessFunc
 
 	pq.lock.RUnlock()
 
-	heap.Init(tempHeap)
-
-	output := make([]T, len(tempHeap.elems))
-
-	i := 0
-
-	for tempHeap.Len() > 0 {
-		// nolint: forcetypeassert, revive
-		output[i] = heap.Pop(tempHeap).(T)
-		i++
-	}
+	// Sorting the copy gives the same result as draining a heap and is
+	// cache-friendlier than heap.Init + N heap.Pop calls.
+	sort.Slice(output, func(i, j int) bool {
+		return lessFunc(output[i], output[j])
+	})
 
 	return json.Marshal(output)
 }

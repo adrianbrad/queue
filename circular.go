@@ -189,18 +189,29 @@ func (q *Circular[T]) Contains(elem T) bool {
 	defer q.lock.RUnlock()
 
 	if q.isEmpty() {
-		return false // queue is empty, item not found
+		return false
 	}
 
-	for i := 0; i < q.size; i++ {
-		idx := (q.head + i) % len(q.elems)
+	// Walk head..end, then wrap to 0..tail. Avoids a modulo per
+	// iteration in the hot path.
+	firstChunk := len(q.elems) - q.head
+	if firstChunk > q.size {
+		firstChunk = q.size
+	}
 
-		if q.elems[idx] == elem {
-			return true // item found
+	for i := 0; i < firstChunk; i++ {
+		if q.elems[q.head+i] == elem {
+			return true
 		}
 	}
 
-	return false // item not found
+	for i := 0; i < q.size-firstChunk; i++ {
+		if q.elems[i] == elem {
+			return true
+		}
+	}
+
+	return false
 }
 
 // Peek returns the element at the head of the queue.
@@ -274,13 +285,17 @@ func (q *Circular[T]) MarshalJSON() ([]byte, error) {
 		return []byte("[]"), nil
 	}
 
-	// Collect elements in logical order from head to tail.
+	// Collect elements in logical order: head..end of array, then
+	// wrap to 0..tail. Two contiguous copies, no per-element modulo.
 	elements := make([]T, q.size)
 
-	for i := 0; i < q.size; i++ {
-		index := (q.head + i) % len(q.elems)
-		elements[i] = q.elems[index]
+	firstChunk := len(q.elems) - q.head
+	if firstChunk > q.size {
+		firstChunk = q.size
 	}
+
+	copy(elements, q.elems[q.head:q.head+firstChunk])
+	copy(elements[firstChunk:], q.elems[:q.size-firstChunk])
 
 	q.lock.RUnlock()
 
