@@ -154,6 +154,15 @@ func (bq *Blocking[T]) Clear() []T {
 
 	removed := make([]T, len(bq.elems))
 	copy(removed, bq.elems)
+
+	// Drop references into the backing array so popped elements can be
+	// GC'd while the queue outlives them. elems = elems[:0] alone keeps
+	// the underlying slots populated.
+	var zero T
+	for i := range bq.elems {
+		bq.elems[i] = zero
+	}
+
 	bq.elems = bq.elems[:0]
 
 	return removed
@@ -274,6 +283,13 @@ func (bq *Blocking[T]) get() (v T, _ error) {
 	}
 
 	elem := bq.elems[0]
+
+	// Zero the popped slot so the backing array no longer references the
+	// popped element; otherwise pointer T leaks until the slice eventually
+	// reallocates.
+	var zero T
+
+	bq.elems[0] = zero
 	bq.elems = bq.elems[1:]
 
 	bq.notFullCond.Signal()

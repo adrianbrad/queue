@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"runtime"
 	"sort"
 	"sync"
 	"testing"
@@ -32,6 +33,116 @@ func TestBlocking(t *testing.T) {
 	t.Run("CondWaitWithCapacity", testBlockingCondWaitWithCapacity)
 	t.Run("MarshalJSON", testBlockingMarshalJSON)
 	t.Run("NewDoesNotAliasCallerSlice", testBlockingNewDoesNotAliasCallerSlice)
+	t.Run("GetReleasesReference", testBlockingGetReleasesReference)
+	t.Run("ClearReleasesReferences", testBlockingClearReleasesReferences)
+}
+
+func testBlockingGetReleasesReference(t *testing.T) {
+	t.Parallel()
+
+	type payload struct{ id int }
+
+	var bq *queue.Blocking[*payload]
+
+	finalized := make(chan struct{}, 1)
+
+	// Create the payload in a nested scope so p/got don't keep it alive
+	// after the offer/get cycle.
+	func() {
+		p := &payload{id: 42}
+		runtime.SetFinalizer(p, func(*payload) {
+			finalized <- struct{}{}
+		})
+
+		bq = queue.NewBlocking[*payload](nil)
+
+		if err := bq.Offer(p); err != nil {
+			t.Fatalf("offer: %v", err)
+		}
+
+		got, err := bq.Get()
+		if err != nil {
+			t.Fatalf("get: %v", err)
+		}
+
+		if got != p {
+			t.Fatalf("unexpected element %v", got)
+		}
+	}()
+
+	// Queue is still live. After a successful Get, the queue must not
+	// retain the popped element. Nudge GC until the finalizer fires or
+	// we give up.
+	deadline := time.After(time.Second)
+
+	for {
+		runtime.GC() //nolint:revive // explicit GC needed to drive finalizer
+
+		select {
+		case <-finalized:
+			runtime.KeepAlive(bq)
+			return
+		case <-deadline:
+			runtime.KeepAlive(bq)
+			t.Fatal("popped element not finalized; backing array still holds it")
+		default:
+			time.Sleep(10 * time.Millisecond)
+		}
+	}
+}
+
+func testBlockingClearReleasesReferences(t *testing.T) {
+	t.Parallel()
+
+	type payload struct{ id int }
+
+	var bq *queue.Blocking[*payload]
+
+	finalized := make(chan struct{}, 3)
+
+	func() {
+		items := []*payload{{id: 1}, {id: 2}, {id: 3}}
+
+		for _, it := range items {
+			runtime.SetFinalizer(it, func(*payload) {
+				finalized <- struct{}{}
+			})
+		}
+
+		bq = queue.NewBlocking[*payload](nil)
+
+		for _, it := range items {
+			if err := bq.Offer(it); err != nil {
+				t.Fatalf("offer: %v", err)
+			}
+		}
+
+		cleared := bq.Clear()
+		if len(cleared) != len(items) {
+			t.Fatalf("expected %d cleared, got %d", len(items), len(cleared))
+		}
+	}()
+
+	// All items should be eligible for finalization now — the queue is
+	// empty and the temporary `cleared` slice has gone out of scope.
+	deadline := time.After(time.Second)
+
+	count := 0
+	for count < 3 {
+		runtime.GC() //nolint:revive // explicit GC needed to drive finalizer
+
+		select {
+		case <-finalized:
+			count++
+		case <-deadline:
+			runtime.KeepAlive(bq)
+			t.Fatalf("only %d/3 payloads finalized; Clear kept references", count)
+		default:
+			time.Sleep(10 * time.Millisecond)
+		}
+	}
+
+	runtime.KeepAlive(bq)
 }
 
 func testBlockingNewDoesNotAliasCallerSlice(t *testing.T) {
