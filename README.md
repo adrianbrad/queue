@@ -269,20 +269,20 @@ func main() {
 
 ## Benchmarks 
 
-Measured on an Apple M4 Pro (darwin/arm64), `go test -bench=. -benchmem -benchtime=3s -count=3`. Median of three runs shown.
+Run locally with `go test -bench=. -benchmem -benchtime=3s -count=3`. Reported numbers are per-operation timings and allocations; absolute values vary by hardware, but the shape (zero-alloc reads everywhere, zero-alloc offer/get for Circular and Linked) should be stable.
 
 ```text
-BenchmarkBlockingQueue/Peek-12             934809784                 3.844 ns/op           0 B/op          0 allocs/op
-BenchmarkBlockingQueue/Get_Offer-12        158163544                22.86  ns/op           8 B/op          1 allocs/op
-BenchmarkBlockingQueue/Offer-12            440557273                13.02  ns/op          49 B/op          0 allocs/op
-BenchmarkCircularQueue/Peek-12             896769478                 3.878 ns/op           0 B/op          0 allocs/op
-BenchmarkCircularQueue/Get_Offer-12        257485726                13.88  ns/op           0 B/op          0 allocs/op
-BenchmarkCircularQueue/Offer-12            540743792                 6.547 ns/op           0 B/op          0 allocs/op
-BenchmarkLinkedQueue/Peek-12               916079484                 3.909 ns/op           0 B/op          0 allocs/op
-BenchmarkLinkedQueue/Get_Offer-12          245418958                14.74  ns/op           0 B/op          0 allocs/op
-BenchmarkLinkedQueue/Offer-12              178329453                22.74  ns/op          16 B/op          1 allocs/op
-BenchmarkPriorityQueue/MarshalJSON-12       19255708               191.5   ns/op         168 B/op          5 allocs/op
-BenchmarkPriorityQueue/Peek-12             920700412                 3.920 ns/op           0 B/op          0 allocs/op
-BenchmarkPriorityQueue/Get_Offer-12        198813460                18.14  ns/op           0 B/op          0 allocs/op
-BenchmarkPriorityQueue/Offer-12            224083004                17.08  ns/op          48 B/op          0 allocs/op
+BenchmarkBlockingQueue/Peek                  3.8 ns/op       0 B/op   0 allocs/op
+BenchmarkBlockingQueue/Get_Offer            22.9 ns/op       8 B/op   1 allocs/op
+BenchmarkBlockingQueue/Offer                13.0 ns/op      49 B/op   0 allocs/op
+BenchmarkCircularQueue/Peek                  3.9 ns/op       0 B/op   0 allocs/op
+BenchmarkCircularQueue/Get_Offer            13.9 ns/op       0 B/op   0 allocs/op
+BenchmarkCircularQueue/Offer                 6.5 ns/op       0 B/op   0 allocs/op
+BenchmarkLinkedQueue/Peek                    3.9 ns/op       0 B/op   0 allocs/op
+BenchmarkLinkedQueue/Get_Offer              14.7 ns/op       0 B/op   0 allocs/op
+BenchmarkLinkedQueue/Offer                  22.7 ns/op      16 B/op   1 allocs/op
+BenchmarkPriorityQueue/MarshalJSON         191.5 ns/op     168 B/op   5 allocs/op
+BenchmarkPriorityQueue/Peek                  3.9 ns/op       0 B/op   0 allocs/op
+BenchmarkPriorityQueue/Get_Offer            18.1 ns/op       0 B/op   0 allocs/op
+BenchmarkPriorityQueue/Offer                17.1 ns/op      48 B/op   0 allocs/op
 ```
