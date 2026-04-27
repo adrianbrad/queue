@@ -10,6 +10,13 @@ updates:
       prefix: "build(deps)"
     reviewers:
       - "adrianbrad"
+    groups:
+      go-modules:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
 
   - package-ecosystem: github-actions
     directory: "/"
@@ -21,3 +28,10 @@ updates:
       prefix: "build(deps)"
     reviewers:
       - "adrianbrad"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
