@@ -46,9 +46,12 @@ func (h *priorityHeap[T]) Push(elem any) {
 func (h *priorityHeap[T]) Pop() any {
 	n := len(h.elems)
 
-	elem := (h.elems)[n-1]
+	elem := h.elems[n-1]
+	// Clear the removed slot so pointer elements are not retained by the backing array.
+	var zero T
+	h.elems[n-1] = zero
 
-	h.elems = (h.elems)[0 : n-1]
+	h.elems = h.elems[:n-1]
 
 	return elem
 }
