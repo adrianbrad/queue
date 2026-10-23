@@ -46,9 +46,9 @@ func (h *priorityHeap[T]) Push(elem any) {
 func (h *priorityHeap[T]) Pop() any {
 	n := len(h.elems)
 
-	elem := (h.elems)[n-1]
+	elem := h.elems[n-1]
 
-	h.elems = (h.elems)[0 : n-1]
+	h.elems = h.elems[0 : n-1]
 
 	return elem
 }
@@ -115,10 +115,10 @@ func NewPriority[T comparable](
 	// provided, the elements are sorted and trimmed to fit the capacity.
 	if options.capacity != nil && *options.capacity < elementsHeap.Len() {
 		sort.Slice(elementsHeap.elems, func(i, j int) bool {
-			return lessFunc((elementsHeap.elems)[i], (elementsHeap.elems)[j])
+			return lessFunc(elementsHeap.elems[i], elementsHeap.elems[j])
 		})
 
-		elementsHeap.elems = (elementsHeap.elems)[:*options.capacity]
+		elementsHeap.elems = elementsHeap.elems[:*options.capacity]
 	}
 
 	heap.Init(elementsHeap)
