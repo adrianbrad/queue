@@ -140,6 +140,9 @@ linters:
           disabled: true
         - name: modifies-parameter
           disabled: true
+        # Every queue holds a sync mutex; a value receiver on MarshalJSON would copy it.
+        - name: marshal-receiver
+          disabled: true
         - name: var-naming
           arguments:
             - []
@@ -203,7 +206,9 @@ formatters:
     - gofumpt
   settings:
     gofumpt:
-      extra-rules: true
+      extra:
+        group-params: true
+        clothe-returns: true
   exclusions:
     generated: lax
     paths:
