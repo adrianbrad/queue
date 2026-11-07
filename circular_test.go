@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"reflect"
+	"runtime"
 	"testing"
+	"time"
 
 	"github.com/adrianbrad/queue"
 )
@@ -25,6 +27,56 @@ func TestCircular(t *testing.T) {
 	t.Run("Iterator", testCircularIterator)
 	t.Run("MarshalJSON", testCircularMarshalJSON)
 	t.Run("NonPositiveCapacity", testCircularNonPositiveCapacity)
+	t.Run("ResetReleasesBeyondInitial", testCircularResetReleasesBeyondInitial)
+}
+
+func testCircularResetReleasesBeyondInitial(t *testing.T) {
+	t.Parallel()
+
+	type payload struct{ id int }
+
+	var cq *queue.Circular[*payload]
+
+	finalized := make(chan struct{}, 3)
+
+	func() {
+		// Capacity 5, 2 initial elems, then offer 3 more. Reset must
+		// release the 3 extras; on unfixed code, slots 2..4 still hold
+		// them via the backing array.
+		cq = queue.NewCircular([]*payload{{id: 1}, {id: 2}}, 5)
+
+		for i := 3; i <= 5; i++ {
+			p := &payload{id: i}
+			runtime.SetFinalizer(p, func(*payload) {
+				finalized <- struct{}{}
+			})
+
+			if err := cq.Offer(p); err != nil {
+				t.Fatalf("offer: %v", err)
+			}
+		}
+
+		cq.Reset()
+	}()
+
+	deadline := time.After(time.Second)
+
+	count := 0
+	for count < 3 {
+		runtime.GC() //nolint:revive // explicit GC needed to drive finalizer
+
+		select {
+		case <-finalized:
+			count++
+		case <-deadline:
+			runtime.KeepAlive(cq)
+			t.Fatalf("only %d/3 extra payloads finalized after Reset", count)
+		default:
+			time.Sleep(10 * time.Millisecond)
+		}
+	}
+
+	runtime.KeepAlive(cq)
 }
 
 func testCircularNonPositiveCapacity(t *testing.T) {

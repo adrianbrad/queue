@@ -2,6 +2,7 @@ package queue_test
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/adrianbrad/queue"
 )
@@ -26,14 +27,24 @@ func ExampleBlocking() {
 	empty = blockingQueue.IsEmpty()
 	fmt.Println("Empty after clear:", empty)
 
-	var elem int
+	var (
+		elem  int
+		after time.Duration
+	)
+
 	done := make(chan struct{})
 
-	// This function waits for a new element to be available in the queue.
+	start := time.Now()
+
+	// this function waits for a new element to be available in the queue.
 	go func() {
 		defer close(done)
+
 		elem = blockingQueue.GetWait()
+		after = time.Since(start)
 	}()
+
+	time.Sleep(time.Millisecond)
 
 	// insert a new element into the queue.
 	if err := blockingQueue.Offer(4); err != nil {
@@ -51,7 +62,11 @@ func ExampleBlocking() {
 
 	<-done
 
-	fmt.Println("Elem received:", elem)
+	fmt.Printf(
+		"Elem %d received after %s",
+		elem,
+		after.Round(time.Millisecond),
+	)
 
 	// Output:
 	// Contains 3: true
@@ -60,5 +75,5 @@ func ExampleBlocking() {
 	// Clear: [1 2 3]
 	// Empty after clear: true
 	// Peeked elem: 4
-	// Elem received: 4
+	// Elem 4 received after 1ms
 }

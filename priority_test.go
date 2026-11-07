@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"reflect"
+	"runtime"
 	"sort"
 	"testing"
+	"time"
 
 	"github.com/adrianbrad/queue"
 )
@@ -22,6 +24,7 @@ func TestPriority(t *testing.T) {
 	t.Run("CapacityLesserThanLenElems", testPriorityCapacityLesserThanLenElems)
 	t.Run("Offer", testPriorityOffer)
 	t.Run("Get", testPriorityGet)
+	t.Run("GetReleasesReference", testPriorityGetReleasesReference)
 	t.Run("Clear", testPriorityClear)
 	t.Run("Contains", testPriorityContains)
 	t.Run("Iterator", testPriorityIterator)
@@ -30,6 +33,96 @@ func TestPriority(t *testing.T) {
 	t.Run("Reset", testPriorityReset)
 	t.Run("MarshalJSON", testPriorityMarshalJSON)
 	t.Run("NegativeCapacity", testPriorityNegativeCapacity)
+	t.Run("ResetReleasesExtras", testPriorityResetReleasesExtras)
+}
+
+func testPriorityGetReleasesReference(t *testing.T) {
+	t.Parallel()
+
+	type payload struct{ id int }
+	var pq *queue.Priority[*payload]
+	finalized := make(chan struct{}, 1)
+
+	func() {
+		p := &payload{id: 42}
+		runtime.SetFinalizer(p, func(*payload) { finalized <- struct{}{} })
+		pq = queue.NewPriority[*payload](nil, func(a, b *payload) bool { return a.id < b.id })
+		if err := pq.Offer(p); err != nil {
+			t.Fatalf("offer: %v", err)
+		}
+		got, err := pq.Get()
+		if err != nil || got != p {
+			t.Fatalf("get: %v, %v", got, err)
+		}
+	}()
+
+	deadline := time.After(time.Second)
+	for {
+		runtime.GC() //nolint:revive // explicit GC needed to drive finalizer
+		select {
+		case <-finalized:
+			runtime.KeepAlive(pq)
+			return
+		case <-deadline:
+			runtime.KeepAlive(pq)
+			t.Fatal("popped element not finalized; backing array still holds it")
+		default:
+			time.Sleep(10 * time.Millisecond)
+		}
+	}
+}
+
+func testPriorityResetReleasesExtras(t *testing.T) {
+	t.Parallel()
+
+	type payload struct{ id int }
+
+	var pq *queue.Priority[*payload]
+
+	finalized := make(chan struct{}, 5)
+
+	lessByID := func(a, b *payload) bool { return a.id < b.id }
+
+	func() {
+		// 2 initial elems, then Offer 5 more with finalizers. Reset
+		// should make the extras reclaimable.
+		pq = queue.NewPriority(
+			[]*payload{{id: 1}, {id: 2}},
+			lessByID,
+		)
+
+		for i := 3; i <= 7; i++ {
+			p := &payload{id: i}
+			runtime.SetFinalizer(p, func(*payload) {
+				finalized <- struct{}{}
+			})
+
+			if err := pq.Offer(p); err != nil {
+				t.Fatalf("offer: %v", err)
+			}
+		}
+
+		pq.Reset()
+	}()
+
+	deadline := time.After(time.Second)
+
+	count := 0
+	for count < 5 {
+		runtime.GC() //nolint:revive // explicit GC needed to drive finalizer
+
+		select {
+		case <-finalized:
+			count++
+		case <-deadline:
+			runtime.KeepAlive(pq)
+			t.Fatalf("only %d/5 extra payloads finalized after Reset", count)
+		default:
+			time.Sleep(10 * time.Millisecond)
+		}
+	}
+
+	runtime.KeepAlive(pq)
 }
 
 func testPriorityNegativeCapacity(t *testing.T) {
