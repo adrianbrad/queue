@@ -40,16 +40,22 @@ func testPriorityGetReleasesReference(t *testing.T) {
 	t.Parallel()
 
 	type payload struct{ id int }
+
 	var pq *queue.Priority[*payload]
+
 	finalized := make(chan struct{}, 1)
 
 	func() {
 		p := &payload{id: 42}
+
 		runtime.SetFinalizer(p, func(*payload) { finalized <- struct{}{} })
+
 		pq = queue.NewPriority[*payload](nil, func(a, b *payload) bool { return a.id < b.id })
+
 		if err := pq.Offer(p); err != nil {
 			t.Fatalf("offer: %v", err)
 		}
+
 		got, err := pq.Get()
 		if err != nil || got != p {
 			t.Fatalf("get: %v, %v", got, err)
@@ -57,11 +63,14 @@ func testPriorityGetReleasesReference(t *testing.T) {
 	}()
 
 	deadline := time.After(time.Second)
+
 	for {
 		runtime.GC() //nolint:revive // explicit GC needed to drive finalizer
+
 		select {
 		case <-finalized:
 			runtime.KeepAlive(pq)
+
 			return
 		case <-deadline:
 			runtime.KeepAlive(pq)
