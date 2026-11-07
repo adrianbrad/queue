@@ -1,3 +1,15 @@
+## v1.7.2 (2026-11-07)
+
+### Docs
+
+- Package synopsis and README name all five queue types and use "ring buffer" and "FIFO" for the circular and linked queues.
+- Remove the retired Go Report Card badge.
+
+### CI
+
+- Releases carry SLSA v1 build provenance as GitHub artifact attestations, with the Sigstore bundle attached to the release.
+- `ExampleBlocking` and the Delay `GetWait` test no longer assert on wall-clock timing (#92). The test suite also runs on Windows and macOS.
+
 ## v1.7.1 (2026-11-07)
 
 ### Fix
