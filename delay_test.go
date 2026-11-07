@@ -114,16 +114,19 @@ func testDelayGetWait(t *testing.T) {
 		due := time.Now().Add(20 * time.Millisecond)
 		delayQueue := queue.NewDelay([]delayed{{ID: 1, At: due}}, delayedDeadline)
 
-		start := time.Now()
 		got := delayQueue.GetWait()
-		elapsed := time.Since(start)
+		// Compare against the deadline itself rather than an elapsed duration
+		// measured from a second, later clock reading: any time spent between
+		// the two readings would make elapsed fall short of 20ms even though
+		// GetWait woke on time.
+		returned := time.Now()
 
 		if got.ID != 1 {
 			t.Fatalf("got id=%d want 1", got.ID)
 		}
 
-		if elapsed < 20*time.Millisecond {
-			t.Fatalf("GetWait returned before deadline: %s", elapsed)
+		if returned.Before(due) {
+			t.Fatalf("GetWait returned %s before deadline", due.Sub(returned))
 		}
 	})
 

@@ -2,7 +2,6 @@ package queue_test
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/adrianbrad/queue"
 )
@@ -18,6 +17,14 @@ func ExampleBlocking() {
 	size := blockingQueue.Size()
 	fmt.Println("Size:", size)
 
+	head, err := blockingQueue.Peek()
+	if err != nil {
+		fmt.Println("Peek err:", err)
+		return
+	}
+
+	fmt.Println("Peeked elem:", head)
+
 	empty := blockingQueue.IsEmpty()
 	fmt.Println("Empty before clear:", empty)
 
@@ -27,53 +34,33 @@ func ExampleBlocking() {
 	empty = blockingQueue.IsEmpty()
 	fmt.Println("Empty after clear:", empty)
 
-	var (
-		elem  int
-		after time.Duration
-	)
+	// Get does not block: on an empty queue it returns an error.
+	if _, err := blockingQueue.Get(); err != nil {
+		fmt.Println("Get err:", err)
+	}
 
-	done := make(chan struct{})
+	received := make(chan int)
 
-	start := time.Now()
-
-	// this function waits for a new element to be available in the queue.
+	// GetWait blocks until an element is available, so it is called from
+	// another goroutine; it returns only once Offer below has run.
 	go func() {
-		defer close(done)
-
-		elem = blockingQueue.GetWait()
-		after = time.Since(start)
+		received <- blockingQueue.GetWait()
 	}()
 
-	time.Sleep(time.Millisecond)
-
-	// insert a new element into the queue.
 	if err := blockingQueue.Offer(4); err != nil {
 		fmt.Println("Offer err:", err)
 		return
 	}
 
-	nextElem, err := blockingQueue.Peek()
-	if err != nil {
-		fmt.Println("Peek err:", err)
-		return
-	}
-
-	fmt.Println("Peeked elem:", nextElem)
-
-	<-done
-
-	fmt.Printf(
-		"Elem %d received after %s",
-		elem,
-		after.Round(time.Millisecond),
-	)
+	fmt.Println("GetWait received:", <-received)
 
 	// Output:
 	// Contains 3: true
 	// Size: 3
+	// Peeked elem: 1
 	// Empty before clear: false
 	// Clear: [1 2 3]
 	// Empty after clear: true
-	// Peeked elem: 4
-	// Elem 4 received after 1ms
+	// Get err: no elements available in the queue
+	// GetWait received: 4
 }
