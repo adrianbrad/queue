@@ -17,7 +17,7 @@
 
 ---
 
-Thread-safe, generic FIFO, priority, circular, linked, and delay queues for Go.
+Thread-safe, generic queue library for Go: blocking, priority, circular (ring buffer), linked FIFO, and delay queues behind one interface.
 
 ## Features
 
@@ -41,8 +41,8 @@ Full API reference at **[pkg.go.dev/github.com/adrianbrad/queue](https://pkg.go.
     * [Queue Interface](#queue-interface)
     * [Blocking Queue](#blocking-queue)
     * [Priority Queue](#priority-queue)
-    * [Circular Queue](#circular-queue)
-    * [Linked Queue](#linked-queue)
+    * [Circular Queue (ring buffer)](#circular-queue-ring-buffer)
+    * [Linked Queue (FIFO)](#linked-queue-fifo)
     * [Delay Queue](#delay-queue)
   * [Benchmarks](#benchmarks)
   * [Contributing](#contributing)
@@ -96,7 +96,7 @@ Every implementation satisfies the same `Queue[T comparable]` interface. Pick a 
 |------------|---------------------|-----------------------------------------------|----------------------------------------------------|-------------------------------------------------------------------------------------------------|
 | `Blocking` | FIFO                | Optional; `Offer` errors on full              | Yes, via `OfferWait`, `GetWait`, `PeekWait`        | You want a classic producer-consumer queue with backpressure and blocking semantics.            |
 | `Priority` | Custom (less func)  | Optional; `Offer` errors on full              | No                                                 | Order depends on a computed value (smallest deadline, highest score, lexicographic, etc).       |
-| `Circular` | FIFO                | Required; `Offer` **overwrites the oldest**   | No                                                 | You want fixed memory and the most recent N items; dropping older entries is acceptable.        |
+| `Circular` | FIFO (ring buffer)  | Required; `Offer` **overwrites the oldest**   | No                                                 | You want fixed memory and the most recent N items; dropping older entries is acceptable.        |
 | `Linked`   | FIFO                | None (unbounded)                              | No                                                 | You need an unbounded FIFO and don't want to pick a capacity up front.                          |
 | `Delay`    | By deadline         | Optional; `Offer` errors on full              | `GetWait` sleeps until the head's deadline passes  | Items should become available at a future time (timers, retry scheduling, TTL expiry).          |
 
@@ -223,7 +223,7 @@ func main() {
 }
 ```
 
-### Circular Queue
+### Circular Queue (ring buffer)
 
 Circular Queue is a fixed size FIFO ordered data structure. When the queue is full, adding a new element to the queue overwrites the oldest element.
 
@@ -271,7 +271,7 @@ func main() {
 }
 ```
 
-### Linked Queue
+### Linked Queue (FIFO)
 
 A linked queue, implemented as a singly linked list, offering O(1)
 time complexity for enqueue and dequeue operations. The queue maintains pointers
