@@ -65,13 +65,14 @@ release:
     gh attestation verify {{ .ProjectName }}-{{ .Version }}-source.tar.gz -R adrianbrad/queue
     ```
 
-    Or against the bundle attached to this release, without querying the
-    attestations API:
+    To verify offline later, download the attestation bundle once and verify
+    against it:
 
     ```bash
+    gh attestation download {{ .ProjectName }}-{{ .Version }}-source.tar.gz -R adrianbrad/queue
     gh attestation verify {{ .ProjectName }}-{{ .Version }}-source.tar.gz \
       -R adrianbrad/queue \
-      --bundle {{ .ProjectName }}-{{ .Version }}.sigstore.json
+      --bundle sha256:*.jsonl
     ```
 
 changelog:
