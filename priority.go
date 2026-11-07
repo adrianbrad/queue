@@ -48,6 +48,10 @@ func (h *priorityHeap[T]) Pop() any {
 
 	elem := h.elems[n-1]
 
+	var zero T
+
+	h.elems[n-1] = zero
+
 	h.elems = h.elems[0 : n-1]
 
 	return elem
