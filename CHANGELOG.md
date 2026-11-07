@@ -1,3 +1,9 @@
+## v1.7.1 (2026-11-07)
+
+### Fix
+
+- **priority**: `Pop` zeros the vacated slot so pointer `T` popped via `Get`, `Clear` or `Iterator` is reclaimable (was: retained by the backing array until the next `Reset` or overwrite). Thanks @dajiaohuang (#90).
+
 ## v1.7.0 (2026-04-21)
 
 ### Feat
