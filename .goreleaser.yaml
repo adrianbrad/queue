@@ -57,6 +57,23 @@ release:
       checksums.txt
     ```
 
+    The source tarball and SBOM also carry SLSA v1 build provenance as a GitHub
+    artifact attestation. Verify that an artifact was built by this repository's
+    release workflow:
+
+    ```bash
+    gh attestation verify {{ .ProjectName }}-{{ .Version }}-source.tar.gz -R adrianbrad/queue
+    ```
+
+    Or against the bundle attached to this release, without querying the
+    attestations API:
+
+    ```bash
+    gh attestation verify {{ .ProjectName }}-{{ .Version }}-source.tar.gz \
+      -R adrianbrad/queue \
+      --bundle {{ .ProjectName }}-{{ .Version }}.sigstore.json
+    ```
+
 changelog:
   use: github
   sort: asc
