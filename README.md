@@ -6,7 +6,6 @@
 [![Mentioned in Awesome Go](https://awesome.re/mentioned-badge.svg)](https://github.com/avelino/awesome-go)
 
 [![CodeFactor](https://www.codefactor.io/repository/github/adrianbrad/queue/badge)](https://www.codefactor.io/repository/github/adrianbrad/queue)
-[![Go Report Card](https://goreportcard.com/badge/github.com/adrianbrad/queue)](https://goreportcard.com/report/github.com/adrianbrad/queue)
 [![codecov](https://codecov.io/gh/adrianbrad/queue/branch/main/graph/badge.svg)](https://codecov.io/gh/adrianbrad/queue)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/adrianbrad/queue/badge)](https://scorecard.dev/viewer/?uri=github.com/adrianbrad/queue)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/12607/badge)](https://www.bestpractices.dev/projects/12607)
