@@ -59,3 +59,24 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage.txt
           flags: unittests
+
+  test-os:
+    name: Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install Go
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version: stable
+
+      # Catches platform-specific test flakiness (timer resolution, scheduler
+      # behaviour) that the Linux-only coverage job cannot see; see #92.
+      - name: Test
+        run: go test -mod=mod -shuffle=on -race -timeout 120s .
