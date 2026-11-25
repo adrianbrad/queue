@@ -73,7 +73,7 @@ func ExampleCircular() {
 	// Peek: 1
 	// Offered 5
 	// Offered 6
-	// Clear: [5 6 3 4]
+	// Clear: [3 4 5 6]
 	// Offered 7
 	// Get: 7
 }

@@ -231,8 +231,8 @@ We have the following queue with a capacity of 3 elements: [1, 2, 3].
 If the tail of the queue is set to 0, as if we just added the element `3`,
 the next element to be added to the queue will overwrite the element at index 0.
 So, if we add the element `4`, the queue will look like this: [4, 2, 3].
-If the head of the queue is set to 0, as if we never removed an element yet,
-then the next element to be removed from the queue will be the element at index 0, which is `4`.
+The head of the queue moves to the oldest element that is left,
+so the next element to be removed from the queue will be the element at index 1, which is `2`.
 
 ```go
 package main
@@ -266,7 +266,7 @@ func main() {
 		// handle err
 	}
 
-	fmt.Printf("elem: %d\n", elem) // elem: 1
+	fmt.Printf("elem: %d\n", elem) // elem: 3
 }
 ```
 

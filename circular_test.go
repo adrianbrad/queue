@@ -240,6 +240,40 @@ func testCircularOffer(t *testing.T) {
 		}
 	})
 
+	t.Run("OverwriteThenGet", func(t *testing.T) {
+		t.Parallel()
+
+		circularQueue := queue.NewCircular([]int{1, 2, 3}, 3)
+
+		// more overwrites than the capacity, to wrap around
+		for elem := 4; elem <= 8; elem++ {
+			if err := circularQueue.Offer(elem); err != nil {
+				t.Fatalf("expected no error, got %v", err)
+			}
+		}
+
+		elem, err := circularQueue.Get()
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+
+		if elem != 6 {
+			t.Fatalf("expected elem to be 6, got %d", elem)
+		}
+
+		// there is room again, so nothing is overwritten
+		if err := circularQueue.Offer(9); err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+
+		queueElems := circularQueue.Clear()
+		expectedElems := []int{7, 8, 9}
+
+		if !reflect.DeepEqual(expectedElems, queueElems) {
+			t.Fatalf("expected elements to be %v, got %v", expectedElems, queueElems)
+		}
+	})
+
 	t.Run("SuccessFullQueue", func(t *testing.T) {
 		elems := []int{1, 2, 3, 4}
 
@@ -259,8 +293,8 @@ func testCircularOffer(t *testing.T) {
 			t.Fatalf("expected no error, got %v", err)
 		}
 
-		if nextElem != 5 {
-			t.Fatalf("expected next elem to be 4, got %d", nextElem)
+		if nextElem != 2 {
+			t.Fatalf("expected next elem to be 2, got %d", nextElem)
 		}
 
 		err = circularQueue.Offer(6)
@@ -269,7 +303,7 @@ func testCircularOffer(t *testing.T) {
 		}
 
 		queueElems := circularQueue.Clear()
-		expectedElems := []int{5, 6, 3, 4}
+		expectedElems := []int{3, 4, 5, 6}
 
 		if !reflect.DeepEqual(expectedElems, queueElems) {
 			t.Fatalf("expected elements to be %v, got %v", expectedElems, queueElems)
