@@ -17,8 +17,8 @@ var _ Queue[any] = (*Circular[any])(nil)
 // If the tail of the queue is set to 0, as if we just added the element `3`,
 // then the next element to be added to the queue will overwrite the element at index 0.
 // So, if we add the element `4`, the queue will look like this: [4, 2, 3].
-// If the head of the queue is set to 0, as if we never removed an element yet,
-// then the next element to be removed from the queue will be the element at index 0, which is `4`.
+// The head of the queue moves to the oldest element that is left,
+// so the next element to be removed from the queue will be the element at index 1, which is `2`.
 type Circular[T comparable] struct {
 	initialElements []T
 	elems           []T
@@ -90,12 +90,15 @@ func (q *Circular[T]) Offer(item T) error {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 
-	if q.size < len(q.elems) {
-		q.size++
-	}
-
 	q.elems[q.tail] = item
 	q.tail = (q.tail + 1) % len(q.elems)
+
+	if q.size < len(q.elems) {
+		q.size++
+	} else {
+		// The head was overwritten, the next oldest item is behind it.
+		q.head = q.tail
+	}
 
 	return nil
 }
